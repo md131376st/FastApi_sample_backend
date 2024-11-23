@@ -85,7 +85,8 @@ async def get_recommendation(image_path: str):
             raise HTTPException(status_code=400, detail="Not enough images in the bucket to provide recommendations")
 
             # Randomly select 5 images
-        recommended_images = random.sample(list_recommendation, 5)
+        # recommended_images = random.sample(list_recommendation, 5)
+        recommended_images = list_recommendation[:6]
 
         return RecommendationList(image_paths =recommended_images)
     except :
