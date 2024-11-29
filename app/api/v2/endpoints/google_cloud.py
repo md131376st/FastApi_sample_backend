@@ -79,14 +79,16 @@ async def get_image(image_path: str):
 @router.get("/recommendation/{image_path:path}", response_model=RecommendationList)
 async def get_recommendation(image_path: str):
     try:
-        list_recommendation = list_images_in_bucket(bucket_name=settings.GCS_BUCKET_NAME,
+        recommendation = list_images_in_bucket(bucket_name=settings.GCS_BUCKET_NAME,
                                                     prefix=settings.GCS_RECOMMENDATION_PATH)
-        if len(list_recommendation) < 5:
-            raise HTTPException(status_code=400, detail="Not enough images in the bucket to provide recommendations")
+        recommended_images=dict()
+        for category, items in recommendation.items():
+            if len(items) < 2:
+                raise HTTPException(status_code=400, detail="Not enough images in the bucket to provide recommendations")
 
             # Randomly select 5 images
         # recommended_images = random.sample(list_recommendation, 5)
-        recommended_images = list_recommendation[:6]
+            recommended_images[category] = items[:2]
 
         return RecommendationList(image_paths =recommended_images)
     except :

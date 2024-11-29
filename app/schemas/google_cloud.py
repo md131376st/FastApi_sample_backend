@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
+
 
 class Coordinate(BaseModel):
     x: float
@@ -25,4 +26,4 @@ class ImageBase64Response(BaseModel):
     image_base64: str
 
 class RecommendationList(BaseModel):
-    image_paths: List[str]
+    image_paths: Dict[str, List[str]]
