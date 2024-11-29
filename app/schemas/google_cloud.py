@@ -16,6 +16,7 @@ class Image(BaseModel):
 class Project(BaseModel):
     projectName: str
     images: List[Image]
+    charecter: str
 
 class ProjectList(BaseModel):
     projects: List[Project]
