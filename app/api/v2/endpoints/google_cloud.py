@@ -3,7 +3,7 @@ import json
 import os
 import random
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Path
 
 from app.core.config import settings
 from app.schemas.google_cloud import Project, ImageBase64Response, RecommendationList
@@ -95,9 +95,9 @@ async def get_recommendation(image_path: str):
         raise HTTPException(status_code=500, detail=f"Error accessing the bucket")
 
 
-@router.get("/character/{main_character}", response_model=str)
+@router.get("/character/{main_character:path}", response_model=str)
 async def get_character_image(
-        main_character: str,
+        main_character: str = Path(..., description="URL-encoded path to the main character file"),
         gender: str = Query(..., regex="^(man|woman)$"),
         image_path: str = Query(None)  # `None` allows the parameter to be optional
 ):
