@@ -29,16 +29,16 @@ def get_file_from_gcs(bucket_name: str, file_path: str, as_text=True):
     :return: Contents of the file as a string or binary depending on `as_text`.
     """
     try:
+        # Check if the file exists using the helper function
+        if not check_file_exists_in_gcs(bucket_name, file_path):
+            raise FileNotFoundError(f"File {file_path} not found in bucket {bucket_name}")
+
         # Initialize the GCS client
         client = get_gcs_client()
 
         # Reference the GCS bucket
         bucket = client.bucket(bucket_name)
         blob = bucket.blob(file_path)
-
-        # Check if the file (blob) exists
-        if not blob.exists():
-            raise FileNotFoundError(f"File {file_path} not found in bucket {bucket_name}")
 
         # Download the file content as text or binary
         if as_text:
@@ -48,7 +48,6 @@ def get_file_from_gcs(bucket_name: str, file_path: str, as_text=True):
 
     except Exception as e:
         raise RuntimeError(f"An error occurred while fetching the file from GCS: {str(e)}")
-
 
 def list_images_in_bucket(bucket_name: str, prefix: str = "")-> Dict[str, List[str]]:
     """
@@ -84,3 +83,25 @@ def list_images_in_bucket(bucket_name: str, prefix: str = "")-> Dict[str, List[s
         return category_list
 
     return category_list
+
+def check_file_exists_in_gcs(bucket_name: str, file_path: str) -> bool:
+    """
+    Checks if a file exists in a Google Cloud Storage bucket.
+
+    :param bucket_name: Name of the GCS bucket.
+    :param file_path: Path of the file within the bucket.
+    :return: True if the file exists, False otherwise.
+    """
+    try:
+        # Initialize the GCS client
+        client = storage.Client()
+
+        # Reference the GCS bucket
+        bucket = client.get_bucket(bucket_name)
+        blob = bucket.blob(file_path)
+
+        # Check if the blob (file) exists
+        return blob.exists()
+
+    except Exception as e:
+        raise RuntimeError(f"An error occurred while checking the file in GCS: {str(e)}")

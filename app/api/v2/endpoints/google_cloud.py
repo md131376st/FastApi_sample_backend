@@ -3,11 +3,11 @@ import json
 import os
 import random
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from app.core.config import settings
 from app.schemas.google_cloud import Project, ImageBase64Response, RecommendationList
-from app.services.gcs_service import get_file_from_gcs, list_images_in_bucket
+from app.services.gcs_service import get_file_from_gcs, list_images_in_bucket, check_file_exists_in_gcs
 
 router = APIRouter()
 
@@ -94,4 +94,48 @@ async def get_recommendation(image_path: str):
     except :
         raise HTTPException(status_code=500, detail=f"Error accessing the bucket")
 
+
+@router.get("/character/{main_character}", response_model=str)
+async def get_character_image(
+        main_character: str,
+        gender: str = Query(..., regex="^(man|woman)$"),
+        image_path: str = Query(None)  # `None` allows the parameter to be optional
+):
+    # Determine the correct gender identifier
+    gender_identifier = "m" if gender == "man" else "w"
+
+    # Supported image extensions
+    supported_extensions = [".png", ".jpg", ".jpeg", ".gif", ".bmp"]
+
+    # Check if the main_character has a valid image extension
+    for ext in supported_extensions:
+        if main_character.endswith(ext):
+            base_character = main_character[: -len(ext)]  # Strip the extension
+            break
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file extension in main_character. Supported extensions are: {', '.join(supported_extensions)}"
+        )
+
+    # Replace or add the gender identifier
+    if "_" in base_character:
+        base_character_parts = base_character.rsplit("_", 1)
+        base_character_parts[-1] = gender_identifier  # Replace the last part with gender identifier
+        base_character = "_".join(base_character_parts)
+    else:
+        base_character += f"_{gender_identifier}"
+
+    # Reassemble the adjusted main_character
+    main_character = f"{base_character}{ext}"
+
+    # Validate the adjusted main_character in GCS
+    if not check_file_exists_in_gcs(bucket_name=settings.GCS_BUCKET_NAME, file_path=main_character):
+        raise HTTPException(status_code=404, detail="Adjusted main_character doesn't exist")
+
+    # Validate the image_path if provided
+    if image_path and not check_file_exists_in_gcs(bucket_name=settings.GCS_BUCKET_NAME, file_path=image_path):
+        raise HTTPException(status_code=404, detail="Image doesn't exist")
+
+    return main_character
 
