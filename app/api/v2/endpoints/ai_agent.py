@@ -2,11 +2,10 @@ from fastapi import APIRouter, HTTPException, Request
 
 from pydantic import BaseModel
 
-
 from app.services.ai_service import process_ai_response, process_ai_response_text
 
-
 router = APIRouter()
+
 
 class UserMessage(BaseModel):
     companyId: str
@@ -18,6 +17,7 @@ class UserMessage(BaseModel):
     #     populate_by_name = True
     #     arbitrary_types_allowed = True
 
+
 @router.post("/usermessage")
 async def store_user_messages(request: Request, input: UserMessage):
     try:
@@ -26,6 +26,7 @@ async def store_user_messages(request: Request, input: UserMessage):
         return ai_response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 class UserMessageText(BaseModel):
     companyId: str
@@ -37,6 +38,7 @@ class UserMessageText(BaseModel):
     #     populate_by_name = True
     #     arbitrary_types_allowed = True
 
+
 @router.post("/textusermessage")
 async def store_user_messages_text(request: Request, input: UserMessageText):
     try:
@@ -45,4 +47,3 @@ async def store_user_messages_text(request: Request, input: UserMessageText):
         return ai_response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

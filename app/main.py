@@ -12,6 +12,7 @@ from app.google_drive import close_google_drive, init_google_drive
 
 origins = [
     "http://localhost:3000",
+    "http://localhost:5173",
     "https://www.morseverse.com",
     "https://morseverse.com/ai_agent",
     "https://accounts.google.com"

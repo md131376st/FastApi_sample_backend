@@ -8,6 +8,7 @@ load_dotenv()
 
 class Settings(BaseSettings):
     # MongoDB configuration
+    PRODUCTION: bool = (os.getenv('Production', 'False') == 'True')
     MONGODB_URL: str = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
     MONGODB_DB_NAME: str = os.getenv("MONGODB_DB_NAME", "fastapi_db_v2")
     MONGODB_DB_NAME_SPETIAL_AI: str = os.getenv("MONGODB_DB_NAME_SPETIAL_AI", "fastapi_db_v2")
