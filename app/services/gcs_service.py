@@ -1,5 +1,5 @@
 import os
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from google.cloud import storage
 from app.core.config import settings  # Import the settings from your config
@@ -61,7 +61,7 @@ def list_images_in_bucket(bucket_name: str, prefix: str = "")-> Dict[str, List[s
         List[str]: A list of URLs for images in the bucket.
     """
     storage_client = get_gcs_client()
-    category_list = {"tops": [], "bottoms": []}
+    category_list = {"tops": [], "bottoms": [],  "overwears": []}
 
     try:
         # Access the specified bucket
@@ -84,24 +84,42 @@ def list_images_in_bucket(bucket_name: str, prefix: str = "")-> Dict[str, List[s
 
     return category_list
 
-def check_file_exists_in_gcs(bucket_name: str, file_path: str) -> bool:
+def check_file_exists_in_gcs(bucket_name: str, file_path: Optional[str] = None, prefix: Optional[str] = None) -> Optional[str]:
     """
-    Checks if a file exists in a Google Cloud Storage bucket.
+    Checks if a file exists in a Google Cloud Storage bucket. Can check for a specific file or files matching a prefix.
 
     :param bucket_name: Name of the GCS bucket.
-    :param file_path: Path of the file within the bucket.
-    :return: True if the file exists, False otherwise.
+    :param file_path: Specific file path to check (optional).
+    :param prefix: Prefix to search for matching files (optional).
+    :return: The file name if it exists, or None if no match is found.
     """
     try:
-        # Initialize the GCS client
-        client = storage.Client()
+        client = get_gcs_client()
+        bucket = client.bucket(bucket_name)
 
-        # Reference the GCS bucket
-        bucket = client.get_bucket(bucket_name)
-        blob = bucket.blob(file_path)
-
-        # Check if the blob (file) exists
-        return blob.exists()
+        if file_path:
+            # Check for a specific file
+            blob = bucket.blob(file_path)
+            return file_path if blob.exists() else None
+        elif prefix:
+            # Check for files matching the prefix
+            blobs = list(bucket.list_blobs(prefix=prefix))
+            return blobs[0].name if blobs else None
+        else:
+            raise ValueError("Either 'file_path' or 'prefix' must be provided.")
 
     except Exception as e:
         raise RuntimeError(f"An error occurred while checking the file in GCS: {str(e)}")
+
+def store_file_in_gcs(bucket_name: str, file_path: str, content: bytes):
+    """
+    Uploads a file to the specified GCS bucket.
+    """
+    try:
+        client = get_gcs_client()
+        bucket = client.bucket(bucket_name)
+        blob = bucket.blob(file_path)
+        blob.upload_from_string(content)
+        print(f"File {file_path} successfully uploaded to bucket {bucket_name}.")
+    except Exception as e:
+        raise RuntimeError(f"Failed to upload file to GCS: {str(e)}")

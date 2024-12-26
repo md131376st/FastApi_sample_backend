@@ -1,13 +1,18 @@
 import base64
+import hashlib
 import json
 import os
 import random
+from imaplib import Literal
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, HTTPException, Query, Path
+from fastapi import APIRouter, HTTPException, Query, Path, Depends
 
 from app.core.config import settings
 from app.schemas.google_cloud import Project, ImageBase64Response, RecommendationList
-from app.services.gcs_service import get_file_from_gcs, list_images_in_bucket, check_file_exists_in_gcs
+from app.schemas.tryOn import TryOnRequest
+from app.services.gcs_service import get_file_from_gcs, list_images_in_bucket, check_file_exists_in_gcs, \
+    store_file_in_gcs
 
 router = APIRouter()
 
@@ -95,11 +100,12 @@ async def get_recommendation(image_path: str):
         raise HTTPException(status_code=500, detail=f"Error accessing the bucket")
 
 
-@router.get("/character/{main_character:path}", response_model=str)
+@router.get("/character_with_cloth/{main_character:path}", response_model=str)
 async def get_character_image(
         main_character: str = Path(..., description="URL-encoded path to the main character file"),
         gender: str = Query(..., regex="^(man|woman)$"),
-        image_path: str = Query(None)  # `None` allows the parameter to be optional
+        cloth_path: str = Query(None),  # `None` allows the parameter to be optional
+        try_on_request: TryOnRequest = Depends()
 ):
     # Determine the correct gender identifier
     gender_identifier = "m" if gender == "man" else "w"
@@ -118,24 +124,44 @@ async def get_character_image(
             detail=f"Unsupported file extension in main_character. Supported extensions are: {', '.join(supported_extensions)}"
         )
 
-    # Replace or add the gender identifier
-    if "_" in base_character:
-        base_character_parts = base_character.rsplit("_", 1)
-        base_character_parts[-1] = gender_identifier  # Replace the last part with gender identifier
-        base_character = "_".join(base_character_parts)
-    else:
-        base_character += f"_{gender_identifier}"
+    # Create a unique hash for the file name based on main_character and cloth_path
+    hash_input = f"{main_character}_{cloth_path}" if cloth_path else main_character
+    hash_value = hashlib.md5(hash_input.encode()).hexdigest()
 
-    # Reassemble the adjusted main_character
-    main_character = f"{base_character}{ext}"
+    # Construct the file path for GCS
+    gcs_file_path = f"{settings.GCS_MAIN_IMAGE_DIRECTORY}/character/{hash_value}_{gender_identifier}"
 
-    # Validate the adjusted main_character in GCS
-    if not check_file_exists_in_gcs(bucket_name=settings.GCS_BUCKET_NAME, file_path=main_character):
-        raise HTTPException(status_code=404, detail="Adjusted main_character doesn't exist")
+    # Check if an image exists with the specified prefix
+    def find_image_with_prefix(prefix: str) -> Optional[str]:
+        # Replace with actual implementation for checking GCS or file storage
+        matched_file = check_file_exists_in_gcs(bucket_name=settings.GCS_BUCKET_NAME, prefix=prefix)
+        return matched_file
+
+    image_path = find_image_with_prefix(gcs_file_path)
+
+    if not image_path:
+        # Call a function to generate the image if no image with the prefix exists
+        generated_image_path = generate_image_and_store(
+            bucket_name=settings.GCS_BUCKET_NAME,
+            file_path=gcs_file_path,
+            try_on_request=try_on_request
+        )
+        return generated_image_path
 
     # Validate the image_path if provided
-    if image_path and not check_file_exists_in_gcs(bucket_name=settings.GCS_BUCKET_NAME, file_path=image_path):
+    if cloth_path and not check_file_exists_in_gcs(bucket_name=settings.GCS_BUCKET_NAME, file_path=cloth_path):
         raise HTTPException(status_code=404, detail="Image doesn't exist")
 
-    return main_character
+    return {"existing_image_path": image_path}
 
+def generate_image_and_store(bucket_name: str, file_path: str, try_on_request: TryOnRequest) -> str:
+    # Simulate image generation logic and store it in the bucket
+    generated_image_content = generate_image_logic(try_on_request)  # Implement your logic for image generation
+    store_file_in_gcs(bucket_name, file_path, generated_image_content)
+    return f"{bucket_name}/{file_path}"
+
+
+
+def generate_image_logic(try_on_request: TryOnRequest) -> bytes:
+    # Placeholder for image generation logic
+    return b"generated_image_data"
