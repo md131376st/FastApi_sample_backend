@@ -49,33 +49,34 @@ def get_file_from_gcs(bucket_name: str, file_path: str, as_text=True):
     except Exception as e:
         raise RuntimeError(f"An error occurred while fetching the file from GCS: {str(e)}")
 
-def list_images_in_bucket(bucket_name: str, prefix: str = "")-> Dict[str, List[str]]:
+def list_images_in_bucket(bucket_name: str, prefix: str = "", selected_categories: Optional[List[str]] = None) -> Dict[str, List[str]]:
     """
     List image URLs in a specified Google Cloud Storage bucket and optional prefix (folder).
 
     Args:
         bucket_name (str): The name of the Google Cloud Storage bucket.
         prefix (str): Optional folder path within the bucket to filter images.
+        selected_categories (List[str]): List of categories to filter, defaults to all categories if None.
 
     Returns:
-        List[str]: A list of URLs for images in the bucket.
+        Dict[str, List[str]]: A dictionary containing lists of image URLs categorized by selected or default categories.
     """
     storage_client = get_gcs_client()
-    category_list = {"tops": [], "bottoms": [],  "overwears": []}
+    all_categories = {"tops": [], "bottoms": [], "overwears": []}
+    category_list = {k: [] for k in (selected_categories or all_categories.keys())}
 
     try:
         # Access the specified bucket
         bucket = storage_client.bucket(bucket_name)
 
         # List all blobs in the bucket with the given prefix
-
-        for category  in category_list.keys():
+        for category in category_list.keys():
             blobs = bucket.list_blobs(prefix=f"{prefix}/{category}")
 
             # Filter and add only image files to the list
             category_list[category] = [
                 blob.name for blob in blobs
-                if blob.name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))
+                if blob.name.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp"))
             ]
 
     except Exception as e:

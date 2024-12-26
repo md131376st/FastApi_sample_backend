@@ -1,10 +1,7 @@
 import base64
 import hashlib
 import json
-import os
-import random
-from imaplib import Literal
-from typing import Annotated, Optional
+from typing import Optional, Annotated, Literal
 
 from fastapi import APIRouter, HTTPException, Query, Path, Depends
 
@@ -13,46 +10,30 @@ from app.schemas.google_cloud import Project, ImageBase64Response, Recommendatio
 from app.schemas.tryOn import TryOnRequest
 from app.services.gcs_service import get_file_from_gcs, list_images_in_bucket, check_file_exists_in_gcs, \
     store_file_in_gcs
+from app.services.tryOn_ai_service import generate_image_logic
 
 router = APIRouter()
 
 
-@router.get("/get-coordinates/{project_name}", response_model=Project)
-async def get_coordinates(project_name: str):
+@router.get("/get-cloth/{category}", response_model=list[str])
+async def get_image(category: Annotated[str, Literal["tops", "bottoms", "overwears"]]):
     """
-    Fetch the coordinates JSON file from GCS and return the content
-    specific to the given project_name, including URLs for images.
+    Fetch a list of images from GCS based on the provided category.
+
+    Args:
+        category (str): The category to fetch images for (e.g., "tops", "bottoms", "overwears").
+
+    Returns:
+        List[str]: A list of image file paths for the given category.
     """
     try:
-        # Fetch the content of the JSON file from GCS
-        content = get_file_from_gcs(bucket_name=settings.GCS_BUCKET_NAME, file_path=settings.GCS_FILE_PATH,
-                                    as_text=True)
+        # Get the list of images for the specific category
+        images = list_images_in_bucket(
+            bucket_name=settings.GCS_BUCKET_NAME,
+            prefix=settings.GCS_RECOMMENDATION_PATH,
+            selected_categories=[category])
+        return images.get(category, [])
 
-        # Parse the JSON content
-        data = json.loads(content)
-
-        # Search for the project by name
-        for project in data.get("projects", []):
-            if project["projectName"].lower() == project_name.lower():
-                # Update the image paths to be URLs (either public or signed URLs)
-                for image in project["images"]:
-                    # If you want to use signed URLs, uncomment the next line
-                    # image["image"] = get_signed_url(settings.GCS_BUCKET_NAME, image["image"])
-
-                    # If your files are public, use the public URL
-                    image["image"] = f"{image['image']}"
-
-                    # Update coordinates image URLs
-                    for coord in image["coordinates"]:
-                        coord["image"] = coord['image']
-
-                return project
-
-        # If no matching project was found, return a 404 error
-        raise FileNotFoundError()
-
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=f"Project '{project_name}' not found.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
@@ -85,24 +66,25 @@ async def get_image(image_path: str):
 async def get_recommendation(image_path: str):
     try:
         recommendation = list_images_in_bucket(bucket_name=settings.GCS_BUCKET_NAME,
-                                                    prefix=settings.GCS_RECOMMENDATION_PATH)
-        recommended_images=dict()
+                                               prefix=settings.GCS_RECOMMENDATION_PATH)
+        recommended_images = dict()
         for category, items in recommendation.items():
             if len(items) < 2:
-                raise HTTPException(status_code=400, detail="Not enough images in the bucket to provide recommendations")
+                raise HTTPException(status_code=400,
+                                    detail="Not enough images in the bucket to provide recommendations")
 
             # Randomly select 5 images
-        # recommended_images = random.sample(list_recommendation, 5)
+            # recommended_images = random.sample(list_recommendation, 5)
             recommended_images[category] = items[:2]
 
-        return RecommendationList(image_paths =recommended_images)
-    except :
+        return RecommendationList(image_paths=recommended_images)
+    except:
         raise HTTPException(status_code=500, detail=f"Error accessing the bucket")
 
 
 @router.get("/character_with_cloth/{main_character:path}", response_model=str)
 async def get_character_image(
-        main_character: str = Path(..., description="URL-encoded path to the main character file"),
+        main_character: str = Path(..., description="BucketPath"),
         gender: str = Query(..., regex="^(man|woman)$"),
         cloth_path: str = Query(None),  # `None` allows the parameter to be optional
         try_on_request: TryOnRequest = Depends()
@@ -148,20 +130,14 @@ async def get_character_image(
         )
         return generated_image_path
 
-    # Validate the image_path if provided
     if cloth_path and not check_file_exists_in_gcs(bucket_name=settings.GCS_BUCKET_NAME, file_path=cloth_path):
         raise HTTPException(status_code=404, detail="Image doesn't exist")
 
-    return {"existing_image_path": image_path}
+    return gcs_file_path
+
 
 def generate_image_and_store(bucket_name: str, file_path: str, try_on_request: TryOnRequest) -> str:
     # Simulate image generation logic and store it in the bucket
     generated_image_content = generate_image_logic(try_on_request)  # Implement your logic for image generation
     store_file_in_gcs(bucket_name, file_path, generated_image_content)
     return f"{bucket_name}/{file_path}"
-
-
-
-def generate_image_logic(try_on_request: TryOnRequest) -> bytes:
-    # Placeholder for image generation logic
-    return b"generated_image_data"
