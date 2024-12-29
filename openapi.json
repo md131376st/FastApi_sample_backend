@@ -1,0 +1,2722 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Morseverse",
+    "description": "APIs for the Morseverse website",
+    "version": "2.0.0"
+  },
+  "paths": {
+    "/api/v2/usermessage": {
+      "post": {
+        "tags": [
+          "AI Agent"
+        ],
+        "summary": "Store User Messages",
+        "operationId": "store_user_messages_api_v2_usermessage_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserMessage"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/textusermessage": {
+      "post": {
+        "tags": [
+          "AI Agent"
+        ],
+        "summary": "Store User Messages Text",
+        "operationId": "store_user_messages_text_api_v2_textusermessage_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserMessageText"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/signup": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Signup",
+        "operationId": "signup_api_v2_signup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Login",
+        "operationId": "login_api_v2_login_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_login_api_v2_login_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/verify-email": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Verify Email",
+        "operationId": "verify_email_api_v2_verify_email_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenJWT"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/forgot-password": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Forgot Password",
+        "operationId": "forgot_password_api_v2_forgot_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/reset-password": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Reset Password",
+        "operationId": "reset_password_api_v2_reset_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/demo": {
+      "post": {
+        "tags": [
+          "Demo"
+        ],
+        "summary": "Demo",
+        "operationId": "demo_api_v2_demo_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BetaSignup"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BetaSignup"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/aiSettings/{id}": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get Ai Settings",
+        "operationId": "get_ai_settings_api_v2_aiSettings__id__get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Settings"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Update Ai Settings",
+        "operationId": "update_ai_settings_api_v2_aiSettings__id__post",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Settings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/getAiList/{id}": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get Ai List",
+        "operationId": "get_ai_list_api_v2_getAiList__id__get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TableData"
+                  },
+                  "title": "Response Get Ai List Api V2 Getailist  Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/ai_info/{companyID}": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get Ai Info",
+        "operationId": "get_ai_info_api_v2_ai_info__companyID__get",
+        "parameters": [
+          {
+            "name": "companyID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Companyid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIInfo-Output"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Update Ai Info",
+        "operationId": "update_ai_info_api_v2_ai_info__companyID__post",
+        "parameters": [
+          {
+            "name": "companyID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Companyid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AIInfo-Input"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIInfo-Output"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/appearance/{company_id}": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get Ai Appearance",
+        "operationId": "get_ai_appearance_api_v2_appearance__company_id__get",
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Company Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preferences"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Set Ai Appearance",
+        "operationId": "set_ai_appearance_api_v2_appearance__company_id__post",
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Company Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Preferences"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/bugreport": {
+      "post": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Create Bug Report",
+        "operationId": "create_bug_report_api_v2_bugreport_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BugReport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BugReport"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/ai_summary/{company_id}": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get Ai Summary",
+        "operationId": "get_ai_summary_api_v2_ai_summary__company_id__get",
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Company Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AISummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/ai_agent": {
+      "post": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Create Ai Agent",
+        "operationId": "create_ai_agent_api_v2_ai_agent_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TableData"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Create Ai Agent Api V2 Ai Agent Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/get-cloth/{category}": {
+      "get": {
+        "tags": [
+          "Google Cloud"
+        ],
+        "summary": "Get Image",
+        "description": "Fetch a list of images from GCS based on the provided category.\n\nArgs:\n    category (str): The category to fetch images for (e.g., \"tops\", \"bottoms\", \"overwears\").\n\nReturns:\n    List[str]: A list of image file paths for the given category.",
+        "operationId": "get_image_api_v2_get_cloth__category__get",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Category"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response Get Image Api V2 Get Cloth  Category  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/get-image/{image_path}": {
+      "get": {
+        "tags": [
+          "Google Cloud"
+        ],
+        "summary": "Get Image",
+        "description": "Fetch an image from GCS based on the provided path and return it in Base64 format.\nThe image path is relative to the GCS bucket.\n\nExample: images/project1/360image1.jpg",
+        "operationId": "get_image_api_v2_get_image__image_path__get",
+        "parameters": [
+          {
+            "name": "image_path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Image Path"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageBase64Response"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/recommendation/{image_path}": {
+      "get": {
+        "tags": [
+          "Google Cloud"
+        ],
+        "summary": "Get Recommendation",
+        "operationId": "get_recommendation_api_v2_recommendation__image_path__get",
+        "parameters": [
+          {
+            "name": "image_path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Image Path"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/character_with_cloth/{main_character}": {
+      "get": {
+        "tags": [
+          "Google Cloud"
+        ],
+        "summary": "Get Character Image",
+        "operationId": "get_character_image_api_v2_character_with_cloth__main_character__get",
+        "parameters": [
+          {
+            "name": "main_character",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "BucketPath",
+              "title": "Main Character"
+            },
+            "description": "BucketPath"
+          },
+          {
+            "name": "gender",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(man|woman)$",
+              "title": "Gender"
+            }
+          },
+          {
+            "name": "cloth_path",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Cloth Path"
+            }
+          },
+          {
+            "name": "guidance_scale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "default": 2.0,
+              "title": "Guidance Scale"
+            }
+          },
+          {
+            "name": "timesteps",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Timesteps"
+            }
+          },
+          {
+            "name": "num_samples",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Num Samples"
+            }
+          },
+          {
+            "name": "seed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 42,
+              "title": "Seed"
+            }
+          },
+          {
+            "name": "nsfw_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": true,
+              "title": "Nsfw Filter"
+            }
+          },
+          {
+            "name": "cover_feet",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": false,
+              "title": "Cover Feet"
+            }
+          },
+          {
+            "name": "adjust_hands",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": false,
+              "title": "Adjust Hands"
+            }
+          },
+          {
+            "name": "restore_background",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": false,
+              "title": "Restore Background"
+            }
+          },
+          {
+            "name": "restore_clothes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": false,
+              "title": "Restore Clothes"
+            }
+          },
+          {
+            "name": "garment_photo_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "auto",
+              "title": "Garment Photo Type"
+            }
+          },
+          {
+            "name": "long_top",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": false,
+              "title": "Long Top"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Get Character Image Api V2 Character With Cloth  Main Character  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/fileUpload": {
+      "post": {
+        "tags": [
+          "Google Drive"
+        ],
+        "summary": "Upload File To Drive",
+        "operationId": "upload_file_to_drive_api_v2_fileUpload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_file_to_drive_api_v2_fileUpload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__schemas__google_drive__FileUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/listFiles": {
+      "get": {
+        "tags": [
+          "Google Drive"
+        ],
+        "summary": "List Files",
+        "operationId": "list_files_api_v2_listFiles_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FileDetail"
+                  },
+                  "type": "array",
+                  "title": "Response List Files Api V2 Listfiles Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/downloadFile/{id}": {
+      "get": {
+        "tags": [
+          "Google Drive"
+        ],
+        "summary": "Download File",
+        "operationId": "download_file_api_v2_downloadFile__id__get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/deleteFile/{id}": {
+      "delete": {
+        "tags": [
+          "Google Drive"
+        ],
+        "summary": "Delete File",
+        "operationId": "delete_file_api_v2_deleteFile__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/set-cookie": {
+      "post": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Set Cookie",
+        "description": "Sets a dynamic cookie on the client's browser.",
+        "operationId": "set_cookie_api_v2_set_cookie_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CookieRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CookieResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/get-cookie": {
+      "get": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Get Cookie",
+        "description": "Retrieves the cookie from the client's request dynamically by its key.",
+        "operationId": "get_cookie_api_v2_get_cookie_get",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "The key/name of the cookie",
+              "title": "Key"
+            },
+            "description": "The key/name of the cookie"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CookieResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/delete-cookie": {
+      "get": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Delete Cookie",
+        "description": "Deletes the cookie by setting it with an expired max age.",
+        "operationId": "delete_cookie_api_v2_delete_cookie_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CookieResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/person": {
+      "post": {
+        "tags": [
+          "Subscriptions"
+        ],
+        "summary": "Create Subscription",
+        "description": "Create a subscription entry in MongoDB.",
+        "operationId": "create_subscription_api_v2_person_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Person"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Create Subscription Api V2 Person Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/people": {
+      "get": {
+        "tags": [
+          "Subscriptions"
+        ],
+        "summary": "Get Subscriptions",
+        "description": "Fetch all subscriptions from MongoDB.",
+        "operationId": "get_subscriptions_api_v2_people_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/try-on-ai-call": {
+      "post": {
+        "tags": [
+          "fashion.ai"
+        ],
+        "summary": "Try On",
+        "operationId": "try_on_api_v2_try_on_ai_call_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TryOnRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AIInfo-Input": {
+        "properties": {
+          "_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "example": "507f1f77bcf86cd799439011"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": " Id"
+          },
+          "companyId": {
+            "type": "string",
+            "title": "Companyid"
+          },
+          "enterpriseName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enterprisename",
+            "default": ""
+          },
+          "website": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website",
+            "default": ""
+          },
+          "industry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Industry",
+            "default": ""
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "default": ""
+          },
+          "agentName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agentname",
+            "default": ""
+          },
+          "commonInquiries": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commoninquiries"
+          },
+          "adjustments": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjustments",
+            "default": ""
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language",
+            "default": "English"
+          },
+          "documentationLinks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FileUploadResponse-Input"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentationlinks"
+          },
+          "referredLinks": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referredlinks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "_id",
+          "companyId"
+        ],
+        "title": "AIInfo"
+      },
+      "AIInfo-Output": {
+        "properties": {
+          "_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "example": "507f1f77bcf86cd799439011"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": " Id"
+          },
+          "companyId": {
+            "type": "string",
+            "title": "Companyid"
+          },
+          "enterpriseName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enterprisename",
+            "default": ""
+          },
+          "website": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website",
+            "default": ""
+          },
+          "industry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Industry",
+            "default": ""
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "default": ""
+          },
+          "agentName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agentname",
+            "default": ""
+          },
+          "commonInquiries": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commoninquiries"
+          },
+          "adjustments": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjustments",
+            "default": ""
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language",
+            "default": "English"
+          },
+          "documentationLinks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__models__dashboard__FileUploadResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentationlinks"
+          },
+          "referredLinks": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referredlinks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "_id",
+          "companyId"
+        ],
+        "title": "AIInfo"
+      },
+      "AISummary": {
+        "properties": {
+          "total_questions": {
+            "type": "integer",
+            "title": "Total Questions"
+          },
+          "total_time": {
+            "type": "string",
+            "title": "Total Time"
+          },
+          "details": {
+            "items": {
+              "$ref": "#/components/schemas/MessageDetail"
+            },
+            "type": "array",
+            "title": "Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_questions",
+          "total_time",
+          "details"
+        ],
+        "title": "AISummary"
+      },
+      "BetaSignup": {
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "title": "Firstname"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "website": {
+            "type": "string",
+            "title": "Website"
+          },
+          "goals": {
+            "type": "string",
+            "title": "Goals"
+          }
+        },
+        "type": "object",
+        "required": [
+          "firstName",
+          "email",
+          "website",
+          "goals"
+        ],
+        "title": "BetaSignup",
+        "example": {
+          "email": "<jon@gmail.com",
+          "firstName": "John",
+          "goals": "Bob",
+          "website": "https://gmail.com"
+        }
+      },
+      "Body_login_api_v2_login_post": {
+        "properties": {
+          "grant_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "password"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grant Type"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "default": ""
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Secret"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "Body_login_api_v2_login_post"
+      },
+      "Body_upload_file_to_drive_api_v2_fileUpload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_file_to_drive_api_v2_fileUpload_post"
+      },
+      "BugReport": {
+        "properties": {
+          "company_id": {
+            "type": "string",
+            "title": "Company Id"
+          },
+          "report_description": {
+            "type": "string",
+            "title": "Report Description"
+          },
+          "steps": {
+            "type": "string",
+            "title": "Steps"
+          },
+          "contact": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact",
+            "default": false
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company_id",
+          "report_description",
+          "steps"
+        ],
+        "title": "BugReport"
+      },
+      "CookieRequest": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "CookieRequest"
+      },
+      "CookieResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "cookie_key": {
+            "type": "string",
+            "title": "Cookie Key"
+          },
+          "cookie_value": {
+            "type": "string",
+            "title": "Cookie Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "cookie_key",
+          "cookie_value"
+        ],
+        "title": "CookieResponse"
+      },
+      "DeleteResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "DeleteResponse"
+      },
+      "FileDetail": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "FileDetail"
+      },
+      "FileUploadResponse-Input": {
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "fileUrl": {
+            "type": "string",
+            "title": "Fileurl"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fileName",
+          "fileUrl"
+        ],
+        "title": "FileUploadResponse"
+      },
+      "ForgotPasswordRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "ForgotPasswordRequest"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ImageBase64Response": {
+        "properties": {
+          "image_base64": {
+            "type": "string",
+            "title": "Image Base64"
+          }
+        },
+        "type": "object",
+        "required": [
+          "image_base64"
+        ],
+        "title": "ImageBase64Response"
+      },
+      "MessageDetail": {
+        "properties": {
+          "userId": {
+            "type": "string",
+            "title": "Userid"
+          },
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "answer": {
+            "type": "string",
+            "title": "Answer"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Time"
+          }
+        },
+        "type": "object",
+        "required": [
+          "userId",
+          "question",
+          "answer",
+          "time"
+        ],
+        "title": "MessageDetail"
+      },
+      "Person": {
+        "properties": {
+          "_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "example": "507f1f77bcf86cd799439011"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": " Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date",
+            "description": "When the person was registered (Unix timestamp)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "Person",
+        "example": {
+          "date": "2024-10-04T10:20:30",
+          "email": "jdoe@example.com"
+        }
+      },
+      "Preferences": {
+        "properties": {
+          "company_id": {
+            "type": "string",
+            "title": "Company Id"
+          },
+          "office": {
+            "type": "string",
+            "title": "Office",
+            "default": "option1"
+          },
+          "character": {
+            "type": "string",
+            "title": "Character",
+            "default": "option1"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company_id"
+        ],
+        "title": "Preferences"
+      },
+      "RecommendationList": {
+        "properties": {
+          "image_paths": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Image Paths"
+          }
+        },
+        "type": "object",
+        "required": [
+          "image_paths"
+        ],
+        "title": "RecommendationList"
+      },
+      "ResetPasswordRequest": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "new_password": {
+            "type": "string",
+            "title": "New Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "new_password"
+        ],
+        "title": "ResetPasswordRequest"
+      },
+      "Settings": {
+        "properties": {
+          "companyId": {
+            "type": "string",
+            "title": "Companyid",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "chatEnabled": {
+            "type": "boolean",
+            "title": "Chatenabled"
+          },
+          "creative": {
+            "type": "boolean",
+            "title": "Creative"
+          },
+          "unknown": {
+            "type": "boolean",
+            "title": "Unknown"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "companyId",
+          "chatEnabled",
+          "creative",
+          "unknown"
+        ],
+        "title": "Settings"
+      },
+      "TableData": {
+        "properties": {
+          "companyId": {
+            "type": "string",
+            "title": "Companyid"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Date"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "statusClass": {
+            "type": "string",
+            "title": "Statusclass"
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress"
+          }
+        },
+        "type": "object",
+        "required": [
+          "companyId",
+          "title",
+          "date",
+          "status",
+          "statusClass",
+          "progress"
+        ],
+        "title": "TableData"
+      },
+      "Token": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token"
+        ],
+        "title": "Token",
+        "example": {
+          "access_token": "youraccesstoken",
+          "token_type": "bearer"
+        }
+      },
+      "TokenJWT": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token"
+        ],
+        "title": "TokenJWT"
+      },
+      "TryOnRequest": {
+        "properties": {
+          "guidance_scale": {
+            "type": "number",
+            "title": "Guidance Scale",
+            "default": 2.0
+          },
+          "timesteps": {
+            "type": "integer",
+            "title": "Timesteps",
+            "default": 50
+          },
+          "num_samples": {
+            "type": "integer",
+            "title": "Num Samples",
+            "default": 1
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed",
+            "default": 42
+          },
+          "nsfw_filter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nsfw Filter",
+            "default": true
+          },
+          "cover_feet": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Feet",
+            "default": false
+          },
+          "adjust_hands": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjust Hands",
+            "default": false
+          },
+          "restore_background": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restore Background",
+            "default": false
+          },
+          "restore_clothes": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restore Clothes",
+            "default": false
+          },
+          "garment_photo_type": {
+            "type": "string",
+            "title": "Garment Photo Type",
+            "default": "auto"
+          },
+          "long_top": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Long Top",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "TryOnRequest"
+      },
+      "UserCreate": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 6
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password",
+            "description": "Password must be at least 6 characters"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "is_company": {
+            "type": "boolean",
+            "title": "Is Company",
+            "default": false
+          },
+          "promo": {
+            "type": "boolean",
+            "title": "Promo",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "UserCreate",
+        "example": {
+          "email": "jdoe@example.com",
+          "full_name": "John Doe",
+          "is_company": false,
+          "password": "yourpassword",
+          "promo": false
+        }
+      },
+      "UserMessage": {
+        "properties": {
+          "companyId": {
+            "type": "string",
+            "title": "Companyid"
+          },
+          "userId": {
+            "type": "string",
+            "title": "Userid"
+          },
+          "lang": {
+            "type": "string",
+            "title": "Lang"
+          },
+          "wavData": {
+            "type": "string",
+            "title": "Wavdata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "companyId",
+          "userId",
+          "lang",
+          "wavData"
+        ],
+        "title": "UserMessage"
+      },
+      "UserMessageText": {
+        "properties": {
+          "companyId": {
+            "type": "string",
+            "title": "Companyid"
+          },
+          "userId": {
+            "type": "string",
+            "title": "Userid"
+          },
+          "lang": {
+            "type": "string",
+            "title": "Lang"
+          },
+          "question": {
+            "type": "string",
+            "title": "Question"
+          }
+        },
+        "type": "object",
+        "required": [
+          "companyId",
+          "userId",
+          "lang",
+          "question"
+        ],
+        "title": "UserMessageText"
+      },
+      "UserOut": {
+        "properties": {
+          "_id": {
+            "type": "string",
+            "title": " Id"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "is_verified": {
+            "type": "boolean",
+            "title": "Is Verified"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "date_joined": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Date Joined"
+          },
+          "is_company": {
+            "type": "boolean",
+            "title": "Is Company",
+            "default": false
+          },
+          "company_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Id"
+          },
+          "promo": {
+            "type": "boolean",
+            "title": "Promo",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "_id",
+          "email",
+          "is_active",
+          "is_verified",
+          "date_joined"
+        ],
+        "title": "UserOut",
+        "example": {
+          "_id": "60d21b4667d0d8992e610c85",
+          "date_joined": "2024-10-05T12:34:56.789Z",
+          "email": "jdoe@example.com",
+          "full_name": "John Doe",
+          "is_active": true,
+          "is_company": false,
+          "is_verified": true,
+          "promo": false
+        }
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "app__models__dashboard__FileUploadResponse": {
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "fileUrl": {
+            "type": "string",
+            "title": "Fileurl"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fileName",
+          "fileUrl"
+        ],
+        "title": "FileUploadResponse"
+      },
+      "app__schemas__google_drive__FileUploadResponse": {
+        "properties": {
+          "fileId": {
+            "type": "string",
+            "title": "Fileid"
+          },
+          "fileName": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "fileURL": {
+            "type": "string",
+            "title": "Fileurl"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fileId",
+          "fileName",
+          "fileURL"
+        ],
+        "title": "FileUploadResponse"
+      }
+    }
+  }
+}
