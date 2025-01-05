@@ -16,7 +16,7 @@ router = APIRouter()
 
 
 @router.get("/get-cloth/{category}", response_model=list[str])
-async def get_image(category: Annotated[str, Literal["tops", "bottoms", "overwears"]]):
+async def get_image(category: Annotated[str, Literal["tops", "bottoms", "overwears","fullbodys"]]):
     """
     Fetch a list of images from GCS based on the provided category.
 

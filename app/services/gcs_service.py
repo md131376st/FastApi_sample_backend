@@ -62,7 +62,7 @@ def list_images_in_bucket(bucket_name: str, prefix: str = "", selected_categorie
         Dict[str, List[str]]: A dictionary containing lists of image URLs categorized by selected or default categories.
     """
     storage_client = get_gcs_client()
-    all_categories = {"tops": [], "bottoms": [], "overwears": []}
+    all_categories = {"tops": [], "bottoms": [], "overwears": [], "fullbodys": []}
     category_list = {k: [] for k in (selected_categories or all_categories.keys())}
 
     try:
