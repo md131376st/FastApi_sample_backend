@@ -931,11 +931,13 @@
           {
             "name": "cloth_path",
             "in": "query",
-            "required": false,
+            "required": true,
             "schema": {
               "type": "string",
+              "description": "Path to the clothing resource",
               "title": "Cloth Path"
-            }
+            },
+            "description": "Path to the clothing resource"
           },
           {
             "name": "guidance_scale",

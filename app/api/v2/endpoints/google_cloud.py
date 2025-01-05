@@ -86,7 +86,7 @@ async def get_recommendation(image_path: str):
 async def get_character_image(
         main_character: str = Path(..., description="BucketPath"),
         gender: str = Query(..., regex="^(man|woman)$"),
-        cloth_path: str = Query(None),  # `None` allows the parameter to be optional
+        cloth_path: str =Query(..., description="Path to the clothing resource"),  # `None` allows the parameter to be optional
         try_on_request: TryOnRequest = Depends()
 ):
     # Determine the correct gender identifier
