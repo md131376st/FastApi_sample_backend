@@ -35,10 +35,9 @@ class Settings(BaseSettings):
     # Google Cloud settings
     GOOGLE_APPLICATION_CREDENTIALS: str = Field(default=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
     GCS_BUCKET_NAME: str = Field(default=os.getenv("GCS_BUCKET_NAME", "your-gcs-bucket"))
-    GCS_FILE_PATH: str = Field(default=os.getenv("GCS_FILE_PATH", "path/to/coordinates.json"))
     GCS_RECOMMENDATION_PATH: str = Field(default=os.getenv("GCS_RECOMMENDATION_PATH", "path/to/recommendations"))
     GCS_MAIN_IMAGE_DIRECTORY:str = Field(default=os.getenv("GCS_MAIN_IMAGE_DIRECTORY", "path/to/image") )
-
+    GCS_PUBLIC_BUCKET_URL: str = Field(default=os.getenv("GCS_PUBLIC_BUCKET_URL", "https://storage.googleapis.com/hi"))
     # AI_Agent
     AI_SITE: str = Field(default=os.getenv("AI_SITE", "default"))
 

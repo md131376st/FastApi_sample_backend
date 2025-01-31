@@ -1,7 +1,8 @@
 import base64
+import copy
 import hashlib
 import json
-from typing import Optional, Annotated, Literal
+from typing import Optional, Annotated, Literal, List, Dict
 
 from fastapi import APIRouter, HTTPException, Query, Path, Depends
 
@@ -15,25 +16,108 @@ from app.services.tryOn_ai_service import generate_image_logic
 router = APIRouter()
 
 
-@router.get("/get-cloth/{category}", response_model=list[str])
-async def get_image(category: Annotated[str, Literal["tops", "bottoms", "overwears","fullbodys"]]):
+
+
+@router.get("/get-cloth/{category}", response_model=List[Dict])
+async def get_cloth(category: Annotated[str, Literal["tops", "bottoms", "overwears", "fullbodys"]]):
     """
-    Fetch a list of images from GCS based on the provided category.
+    Fetch structured product data from GCS where each image is a separate entry.
 
     Args:
-        category (str): The category to fetch images for (e.g., "tops", "bottoms", "overwears").
+        category (str): The category to fetch (e.g., "tops", "bottoms", "overwears").
 
     Returns:
-        List[str]: A list of image file paths for the given category.
+        List[Dict]: A list where each image is an individual product entry.
     """
     try:
-        # Get the list of images for the specific category
-        images = list_images_in_bucket(
-            bucket_name=settings.GCS_BUCKET_NAME,
-            prefix=settings.GCS_RECOMMENDATION_PATH,
-            selected_categories=[category])
-        return images.get(category, [])
+        json_path = f"images/recommendation/{category}.json"
+        json_content = get_file_from_gcs(bucket_name=settings.GCS_BUCKET_NAME, file_path=json_path, as_text=True)
+        clothing_data = json.loads(json_content).get("clothingData", [])
 
+        formatted_products = []
+
+        for item in clothing_data:
+            for color_index, color_option in enumerate(item.get("colorOptions", [])):
+                formatted_products.append({
+                    "id": f"{category}:{item['id']}:{color_index}",  # Unique ID format (category:id:colorIndex)
+                    "type": item["category"].lower(),
+                    "name": item["name"],
+                    "image": f"{settings.GCS_PUBLIC_BUCKET_URL}{color_option['image']}",
+                    "price": float(item["price"].replace("$", ""))
+                })
+
+        return formatted_products
+
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Data for category '{category}' not found.")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Error parsing JSON data from GCS.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+
+@router.get("/get-product/{product_id}", response_model=Dict)
+async def get_product(product_id: str):
+    """
+    Fetch full product details from GCS JSON files based on the product ID.
+
+    Args:
+        product_id (str): The product identifier in the format "category:id:colorIndex".
+
+    Returns:
+        Dict: The full product details with a focus on the requested color.
+    """
+    try:
+        # Extract category, product number, and color index
+        try:
+            category, product_number, color_index = product_id.split(":")
+            product_number = int(product_number)  # Convert to integer for lookup
+            color_index = int(color_index)  # Convert to integer for color lookup
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid product ID format.")
+
+        # Path to the JSON file in GCS
+        json_path = f"images/recommendation/{category}.json"
+
+        # Fetch JSON data from GCS
+        json_content = get_file_from_gcs(bucket_name=settings.GCS_BUCKET_NAME, file_path=json_path, as_text=True)
+        clothing_data = json.loads(json_content).get("clothingData", [])
+
+        # Search for the product by ID
+        product = next((item for item in clothing_data if item["id"] == product_number), None)
+
+        if not product:
+            raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found.")
+
+        # Ensure the requested color index exists
+        if color_index >= len(product.get("colorOptions", [])):
+            raise HTTPException(status_code=400, detail="Invalid color index for this product.")
+
+        # Extract only the requested color details
+        selected_color = copy.deepcopy(product["colorOptions"][color_index])
+        selected_color["image"] = f"{settings.GCS_PUBLIC_BUCKET_URL}{selected_color['image']}"
+
+        # Return the full product details but highlight the requested color
+        return {
+            "id": product["id"],
+            "name": product["name"],
+            "model": product["model"],
+            "price": product["price"],
+            "category": product["category"],
+            "selectedColor": selected_color,
+            "description": product.get("description", ""),
+            "allColors": [
+                {
+                    "color": color_option["color"],
+                    "image": f"{settings.GCS_PUBLIC_BUCKET_URL}{color_option['image']}"
+                } for color_option in product.get("colorOptions", [])
+            ]
+        }
+
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Data for category '{category}' not found.")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Error parsing JSON data from GCS.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
