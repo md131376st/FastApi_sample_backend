@@ -109,7 +109,9 @@ async def get_product(product_id: str):
             "allColors": [
                 {
                     "color": color_option["color"],
-                    "image": f"{settings.GCS_PUBLIC_BUCKET_URL}{color_option['image']}"
+                    "image": f"{settings.GCS_PUBLIC_BUCKET_URL}{color_option['image']}",
+                    "sizeOptions": color_option.get("sizeOptions", [])
+
                 } for color_option in product.get("colorOptions", [])
             ]
         }
