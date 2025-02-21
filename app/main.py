@@ -16,6 +16,7 @@ logger = logging.getLogger("app")
 # Allowed origins for CORS
 origins = [
     "http://localhost:3000",
+    "http://localhost:3001",
     "http://localhost:5173",
     "https://www.morseverse.com",
     "https://morseverse.com/ai_agent",

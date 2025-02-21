@@ -3,6 +3,8 @@ from typing import List, Dict, Optional
 
 from google.cloud import storage
 from app.core.config import settings  # Import the settings from your config
+from app.core.enums import FashnCategory
+from app.schemas.fashn_category_model import FashnCategoryModel
 
 
 # Initialize the Google Cloud Storage client
@@ -49,43 +51,33 @@ def get_file_from_gcs(bucket_name: str, file_path: str, as_text=True):
     except Exception as e:
         raise RuntimeError(f"An error occurred while fetching the file from GCS: {str(e)}")
 
-def list_images_in_bucket(bucket_name: str, prefix: str = "", selected_categories: Optional[List[str]] = None) -> Dict[str, List[str]]:
-    """
-    List image URLs in a specified Google Cloud Storage bucket and optional prefix (folder).
 
-    Args:
-        bucket_name (str): The name of the Google Cloud Storage bucket.
-        prefix (str): Optional folder path within the bucket to filter images.
-        selected_categories (List[str]): List of categories to filter, defaults to all categories if None.
-
-    Returns:
-        Dict[str, List[str]]: A dictionary containing lists of image URLs categorized by selected or default categories.
-    """
+def list_images_in_bucket(
+        bucket_name: str,
+        prefix: str = "",
+        selected_categories: Optional[List[FashnCategory]] = None) \
+        -> FashnCategoryModel:
     storage_client = get_gcs_client()
-    all_categories = {"tops": [], "bottoms": [], "overwears": [], "fullbodys": []}
-    category_list = {k: [] for k in (selected_categories or all_categories.keys())}
+    category_model = FashnCategoryModel()
 
     try:
-        # Access the specified bucket
         bucket = storage_client.bucket(bucket_name)
+        categories_to_list = selected_categories or list(FashnCategory)
 
-        # List all blobs in the bucket with the given prefix
-        for category in category_list.keys():
-            blobs = bucket.list_blobs(prefix=f"{prefix}/{category}")
-
-            # Filter and add only image files to the list
-            category_list[category] = [
+        for category in categories_to_list:
+            blobs = bucket.list_blobs(prefix=f"{prefix}/{category.value}")
+            category_model.categories[category] = [
                 blob.name for blob in blobs
                 if blob.name.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp"))
             ]
-
     except Exception as e:
         print(f"Error accessing the bucket: {str(e)}")
-        return category_list
 
-    return category_list
+    return category_model
 
-def check_file_exists_in_gcs(bucket_name: str, file_path: Optional[str] = None, prefix: Optional[str] = None) -> Optional[str]:
+
+def check_file_exists_in_gcs(bucket_name: str, file_path: Optional[str] = None, prefix: Optional[str] = None) -> \
+        Optional[str]:
     """
     Checks if a file exists in a Google Cloud Storage bucket. Can check for a specific file or files matching a prefix.
 
@@ -112,15 +104,13 @@ def check_file_exists_in_gcs(bucket_name: str, file_path: Optional[str] = None, 
     except Exception as e:
         raise RuntimeError(f"An error occurred while checking the file in GCS: {str(e)}")
 
-def store_file_in_gcs(bucket_name: str, file_path: str, content: bytes):
-    """
-    Uploads a file to the specified GCS bucket.
-    """
+
+def store_file_in_gcs(bucket_name: str, file_path: str, content: bytes, type: str = "image/jpeg"):
     try:
         client = get_gcs_client()
         bucket = client.bucket(bucket_name)
         blob = bucket.blob(file_path)
-        blob.upload_from_string(content)
+        blob.upload_from_string(content, content_type=type)
         print(f"File {file_path} successfully uploaded to bucket {bucket_name}.")
     except Exception as e:
         raise RuntimeError(f"Failed to upload file to GCS: {str(e)}")

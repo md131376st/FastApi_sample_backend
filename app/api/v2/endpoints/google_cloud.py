@@ -9,13 +9,11 @@ from fastapi import APIRouter, HTTPException, Query, Path, Depends
 from app.core.config import settings
 from app.schemas.google_cloud import Project, ImageBase64Response, RecommendationList
 from app.schemas.tryOn import TryOnRequest
+from app.services.fashn_ai_service import generate_image_logic
 from app.services.gcs_service import get_file_from_gcs, list_images_in_bucket, check_file_exists_in_gcs, \
     store_file_in_gcs
-from app.services.tryOn_ai_service import generate_image_logic
 
 router = APIRouter()
-
-
 
 
 @router.get("/get-cloth/{category}", response_model=List[Dict])
@@ -172,7 +170,8 @@ async def get_recommendation(image_path: str):
 async def get_character_image(
         main_character: str = Path(..., description="BucketPath"),
         gender: str = Query(..., regex="^(man|woman)$"),
-        cloth_path: str =Query(..., description="Path to the clothing resource"),  # `None` allows the parameter to be optional
+        cloth_path: str = Query(..., description="Path to the clothing resource"),
+        # `None` allows the parameter to be optional
         try_on_request: TryOnRequest = Depends()
 ):
     # Determine the correct gender identifier
@@ -211,8 +210,9 @@ async def get_character_image(
         # Call a function to generate the image if no image with the prefix exists
         generated_image_path = generate_image_and_store(
             bucket_name=settings.GCS_BUCKET_NAME,
-            file_path=gcs_file_path,
-            try_on_request=try_on_request
+            main_character=main_character,
+            cloth_path=cloth_path,
+            file_path=gcs_file_path
         )
         return generated_image_path
 
@@ -222,8 +222,34 @@ async def get_character_image(
     return gcs_file_path
 
 
-def generate_image_and_store(bucket_name: str, file_path: str, try_on_request: TryOnRequest) -> str:
+def generate_image_and_store(
+        bucket_name: str,
+        main_character: str,
+        cloth_path: str,
+        file_path: str
+) -> str:
     # Simulate image generation logic and store it in the bucket
-    generated_image_content = generate_image_logic(try_on_request)  # Implement your logic for image generation
-    store_file_in_gcs(bucket_name, file_path, generated_image_content)
+    # getbase64Images
+    main_character_img = get_file_from_gcs(bucket_name=bucket_name, file_path=main_character, as_text=False)
+
+    # Encode the binary content into base64
+    main_character_img_base64 = base64.b64encode(main_character_img).decode('utf-8')
+    cloth_path_img = get_file_from_gcs(bucket_name=bucket_name, file_path=cloth_path, as_text=False)
+
+    # Encode the binary content into base64
+    cloth_path_img_base64 = base64.b64encode(cloth_path_img).decode('utf-8')
+    generated_image_content = generate_image_logic(
+        main_character_img_base64,
+        cloth_path_img_base64
+    )
+    base64_data = generated_image_content.result_image_base64
+
+    # Decode the Base64 string
+    image_data = base64.b64decode(base64_data)
+    if generated_image_content:
+        store_file_in_gcs(
+            bucket_name,
+            file_path,
+            image_data
+        )
     return f"{bucket_name}/{file_path}"
