@@ -174,6 +174,13 @@ async def get_character_image(
         # `None` allows the parameter to be optional
         try_on_request: TryOnRequest = Depends()
 ):
+    """
+       generate the character with cloth
+       included in main_character path: images/character/
+       main_character defult = 2_f.jpg
+       no need for bucket
+       clothpath = images/recommendation/bottoms/00f9272f652fde49cae740deab4efec4.jpg
+       """
     # Determine the correct gender identifier
     gender_identifier = "m" if gender == "man" else "w"
 
@@ -190,13 +197,26 @@ async def get_character_image(
             status_code=400,
             detail=f"Unsupported file extension in main_character. Supported extensions are: {', '.join(supported_extensions)}"
         )
+    exstantion = ""
+    for ext in supported_extensions:
+        if cloth_path.endswith(ext):
+            base_cloth = main_character[: -len(ext)]  # Strip the extension
+            exstantion = ext
+            break
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file extension in main_character. Supported extensions are: {', '.join(supported_extensions)}"
+        )
 
     # Create a unique hash for the file name based on main_character and cloth_path
-    hash_input = f"{main_character}_{cloth_path}" if cloth_path else main_character
+    hash_input = f"{base_character}_{base_cloth}" if cloth_path else base_character
     hash_value = hashlib.md5(hash_input.encode()).hexdigest()
 
     # Construct the file path for GCS
-    gcs_file_path = f"{settings.GCS_MAIN_IMAGE_DIRECTORY}/character/{hash_value}_{gender_identifier}"
+
+
+    gcs_file_path = f"character/{hash_value}_{gender_identifier}.jpeg"
 
     # Check if an image exists with the specified prefix
     def find_image_with_prefix(prefix: str) -> Optional[str]:
@@ -210,7 +230,7 @@ async def get_character_image(
         # Call a function to generate the image if no image with the prefix exists
         generated_image_path = generate_image_and_store(
             bucket_name=settings.GCS_BUCKET_NAME,
-            main_character=main_character,
+            main_character=f"character/{main_character}",
             cloth_path=cloth_path,
             file_path=gcs_file_path
         )
@@ -218,8 +238,8 @@ async def get_character_image(
 
     if cloth_path and not check_file_exists_in_gcs(bucket_name=settings.GCS_BUCKET_NAME, file_path=cloth_path):
         raise HTTPException(status_code=404, detail="Image doesn't exist")
-
-    return gcs_file_path
+    print("hi")
+    return f"{settings.GCS_PUBLIC_BUCKET_URL}/{gcs_file_path}"
 
 
 def generate_image_and_store(
@@ -230,6 +250,9 @@ def generate_image_and_store(
 ) -> str:
     # Simulate image generation logic and store it in the bucket
     # getbase64Images
+    # main_character => form the charector path of the bucket
+    # cloth_path => from
+
     main_character_img = get_file_from_gcs(bucket_name=bucket_name, file_path=main_character, as_text=False)
 
     # Encode the binary content into base64
@@ -239,17 +262,19 @@ def generate_image_and_store(
     # Encode the binary content into base64
     cloth_path_img_base64 = base64.b64encode(cloth_path_img).decode('utf-8')
     generated_image_content = generate_image_logic(
+        cloth_path,
         main_character_img_base64,
         cloth_path_img_base64
     )
-    base64_data = generated_image_content.result_image_base64
+    base64_data = generated_image_content["result_image_base64"].split(",")[1]
 
     # Decode the Base64 string
     image_data = base64.b64decode(base64_data)
+
     if generated_image_content:
         store_file_in_gcs(
             bucket_name,
             file_path,
             image_data
         )
-    return f"{bucket_name}/{file_path}"
+    return f"{settings.GCS_PUBLIC_BUCKET_URL}/{file_path}"

@@ -53,7 +53,7 @@ class ExternalService:
                     params=params,
                     json=data,
                     headers=headers,
-                    timeout=self.timeout
+                    timeout=60
                 )
                 return self._handle_response(response)
 
