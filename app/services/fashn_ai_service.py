@@ -2,11 +2,11 @@ import base64
 import logging
 from typing import Any
 
-from app.core.config import Settings, settings
+from app.core.config import  settings
 from app.core.external_service import ExternalService
 from app.core.enums import FashnCategory
 from app.schemas.fashn_category_model import FashnCategoryModel
-from app.schemas.tryOn import TryOnRequest
+
 
 
 class FashnAIService(ExternalService):
@@ -56,7 +56,8 @@ class FashnAIService(ExternalService):
             logging.error(f"Prediction failed: {response}")
             return None
 
-
+    def recommendation(self, image_data, garment_image_path):
+        return []
 
 
 def generate_image_logic(cloth_path, main_character, cloth) -> dict[str, Any] | str:
