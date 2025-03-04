@@ -234,7 +234,10 @@ async def get_character_image(
             cloth_path=cloth_path,
             file_path=gcs_file_path
         )
-        return generated_image_path
+        if generated_image_path:
+            return generated_image_path
+        else:
+            raise HTTPException(status_code=500, detail="Internal server error")
 
     if cloth_path and not check_file_exists_in_gcs(bucket_name=settings.GCS_BUCKET_NAME, file_path=cloth_path):
         raise HTTPException(status_code=404, detail="Image doesn't exist")
@@ -266,15 +269,16 @@ def generate_image_and_store(
         main_character_img_base64,
         cloth_path_img_base64
     )
-    base64_data = generated_image_content["result_image_base64"].split(",")[1]
-
-    # Decode the Base64 string
-    image_data = base64.b64decode(base64_data)
-
     if generated_image_content:
-        store_file_in_gcs(
-            bucket_name,
-            file_path,
-            image_data
-        )
-    return f"{settings.GCS_PUBLIC_BUCKET_URL}/{file_path}"
+        base64_data = generated_image_content["result_image_base64"].split(",")[1]
+
+        image_data = base64.b64decode(base64_data)
+
+        if generated_image_content:
+            store_file_in_gcs(
+                bucket_name,
+                file_path,
+                image_data
+            )
+        return f"{settings.GCS_PUBLIC_BUCKET_URL}/{file_path}"
+    return ""
