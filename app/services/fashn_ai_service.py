@@ -5,8 +5,7 @@ from typing import Any
 from app.core.config import  settings
 from app.core.external_service import ExternalService
 from app.core.enums import FashnCategory
-from app.schemas.fashn_category_model import FashnCategoryModel
-
+from app.schemas.fashn_category_model import FashnCategoryModel, ClothItem
 
 
 class FashnAIService(ExternalService):
@@ -56,8 +55,21 @@ class FashnAIService(ExternalService):
             logging.error(f"Prediction failed: {response}")
             return None
 
-    def recommendation(self, image_data, garment_image_path):
-        return []
+    def recommendation(self, image_data):
+        endpoint = "recommendations"
+        payload = ClothItem(
+            id=image_data["id"],
+            name=image_data["name"],
+            color=image_data.get("colorOptions", [{}])[0].get("color", ""),
+            size=image_data.get("sizeOptions", [""])[0]
+        )
+
+        response = self.post(endpoint=endpoint, data=payload.model_dump())
+        if response.status_code == 200:
+            return response.json()
+        else:
+            logging.error(f"Recommendation failed: {response}")
+            raise Exception(f"Failed to get recommendations: {response.status_code} - {response.text}")
 
 
 def generate_image_logic(cloth_path, main_character, cloth) -> dict[str, Any] | str:

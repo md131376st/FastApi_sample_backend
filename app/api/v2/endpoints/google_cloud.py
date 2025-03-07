@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Query, Path, Depends
 from app.core.config import settings
 from app.schemas.google_cloud import Project, ImageBase64Response, RecommendationList
 from app.schemas.tryOn import TryOnRequest
-from app.services.fashn_ai_service import generate_image_logic
+from app.services.fashn_ai_service import generate_image_logic, FashnAIService
 from app.services.gcs_service import get_file_from_gcs, list_images_in_bucket, check_file_exists_in_gcs, \
     store_file_in_gcs
 
@@ -149,19 +149,35 @@ async def get_image(image_path: str):
 @router.get("/recommendation/{image_path:path}", response_model=RecommendationList)
 async def get_recommendation(image_path: str):
     try:
-        recommendation = list_images_in_bucket(bucket_name=settings.GCS_BUCKET_NAME,
-                                               prefix=settings.GCS_RECOMMENDATION_PATH)
+        category = image_path.split('/')[2]
+        json_path = f"images/recommendation/{category}.json"
+        json_content = get_file_from_gcs(bucket_name=settings.GCS_BUCKET_NAME, file_path=json_path, as_text=True)
+        clothing_data = json.loads(json_content).get("clothingData", [])
+        item = None
+        for clothing_item in clothing_data:
+            for color_option in clothing_item.get("colorOptions", []):
+                if color_option["image"] == image_path:
+                    item = clothing_item
+                break
+            if item:
+                break
+            if not item:
+                raise HTTPException(status_code=404, detail="Item not found in the JSON file.")
+
+            fastion_service = FashnAIService()
+            recommendation = fastion_service.recommendation(item)
+
         recommended_images = dict()
-        for category, items in recommendation.items():
-            if len(items) < 2:
-                raise HTTPException(status_code=400,
-                                    detail="Not enough images in the bucket to provide recommendations")
+        # for category, items in recommendation:
+        #     if len(items) < 2:
+        #         raise HTTPException(status_code=400,
+        #                             detail="Not enough images in the bucket to provide recommendations")
+        #
+        #     # Randomly select 5 images
+        #     # recommended_images = random.sample(list_recommendation, 5)
+        #     recommended_images[category] = items[:2]
 
-            # Randomly select 5 images
-            # recommended_images = random.sample(list_recommendation, 5)
-            recommended_images[category] = items[:2]
-
-        return RecommendationList(image_paths=recommended_images)
+        return RecommendationList(image_paths=recommendation)
     except:
         raise HTTPException(status_code=500, detail=f"Error accessing the bucket")
 
@@ -214,7 +230,6 @@ async def get_character_image(
     hash_value = hashlib.md5(hash_input.encode()).hexdigest()
 
     # Construct the file path for GCS
-
 
     gcs_file_path = f"character/{hash_value}_{gender_identifier}.jpeg"
 
