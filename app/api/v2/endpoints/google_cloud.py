@@ -7,7 +7,7 @@ from typing import Optional, Annotated, Literal, List, Dict
 from fastapi import APIRouter, HTTPException, Query, Path, Depends
 
 from app.core.config import settings
-from app.schemas.google_cloud import Project, ImageBase64Response, RecommendationList
+from app.schemas.google_cloud import Project, ImageBase64Response
 from app.schemas.tryOn import TryOnRequest
 from app.services.fashn_ai_service import generate_image_logic, FashnAIService
 from app.services.gcs_service import get_file_from_gcs, list_images_in_bucket, check_file_exists_in_gcs, \
@@ -146,40 +146,67 @@ async def get_image(image_path: str):
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 
-@router.get("/recommendation/{image_path:path}", response_model=RecommendationList)
+@router.get("/recommendation/{image_path:path}")
 async def get_recommendation(image_path: str):
+    print("hi")
     try:
-        category = image_path.split('/')[2]
+        category = image_path.split('/')[-2]
         json_path = f"images/recommendation/{category}.json"
         json_content = get_file_from_gcs(bucket_name=settings.GCS_BUCKET_NAME, file_path=json_path, as_text=True)
         clothing_data = json.loads(json_content).get("clothingData", [])
-        item = None
+        item = {}
         for clothing_item in clothing_data:
             for color_option in clothing_item.get("colorOptions", []):
-                if color_option["image"] == image_path:
+                if f"{settings.GCS_PUBLIC_BUCKET_URL}{color_option["image"]}" == image_path:
                     item = clothing_item
-                break
+                    break
             if item:
                 break
-            if not item:
-                raise HTTPException(status_code=404, detail="Item not found in the JSON file.")
+        print(item)
+        if not item:
+            return HTTPException(status_code=404, detail="Item not found in the JSON file.")
 
-            fastion_service = FashnAIService()
-            recommendation = fastion_service.recommendation(item)
+        fastion_service = FashnAIService()
+        recommendation = fastion_service.recommendation(item)
+        if recommendation is None:
+            return HTTPException(status_code=500, detail="Error generating recommendations ")
+        if recommendation["status"] == "success":
+            products = []
+            product_map = {}
 
-        recommended_images = dict()
-        # for category, items in recommendation:
-        #     if len(items) < 2:
-        #         raise HTTPException(status_code=400,
-        #                             detail="Not enough images in the bucket to provide recommendations")
-        #
-        #     # Randomly select 5 images
-        #     # recommended_images = random.sample(list_recommendation, 5)
-        #     recommended_images[category] = items[:2]
+            for item in recommendation["recommendations"]:
+                product_key = (item["id"], item["category"],item["image"])
+                item["image"] = f"{settings.GCS_PUBLIC_BUCKET_URL}{item["image"]}"
+                if product_key not in product_map:
+                    product = {
+                        "id": item["id"],
+                        "name": item["name"],
+                        "model": item["model"],
+                        "price": str(item["price"]),
+                        "category": item["category"],
+                        "selectedColor": {
+                            "color": item["color"],
+                            "image": item["image"],
+                            "sizeOptions": []
+                        },
+                        "description": f"{item['name']} in {item['color']}, model {item['model']}",
+                        "allColors": []
+                    }
+                    product_map[product_key] = product
+                    products.append(product)
 
-        return RecommendationList(image_paths=recommendation)
+                # Add sizes
+                product_map[product_key]["selectedColor"]["sizeOptions"].append({"size": item["size"]})
+
+                # Ensure unique colors
+                if not any(c["color"] == item["color"] for c in product_map[product_key]["allColors"]):
+                    product_map[product_key]["allColors"].append({"color": item["color"], "image": item["image"]})
+
+            return products
+        else:
+            return HTTPException(status_code=500, detail="Error generating recommendations ")
     except:
-        raise HTTPException(status_code=500, detail=f"Error accessing the bucket")
+        return HTTPException(status_code=500, detail=f"Error accessing the bucket")
 
 
 @router.get("/character_with_cloth/{main_character:path}", response_model=str)

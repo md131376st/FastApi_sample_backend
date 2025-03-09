@@ -20,6 +20,7 @@ origins = [
     "http://localhost:5173",
     "https://www.morseverse.com",
     "https://morseverse.com/ai_agent",
+    "https://morseverse.com/ai_agent/fashn",
     "https://accounts.google.com"
 ]
 

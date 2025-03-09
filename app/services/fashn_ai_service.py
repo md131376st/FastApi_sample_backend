@@ -14,7 +14,7 @@ class FashnAIService(ExternalService):
     """
 
     def __init__(self):
-        base_url = f"{settings.AI_SITE}/fashn"
+        base_url = f"{settings.AI_SITE}"
         super().__init__(base_url)  # No API key required
         self.category_model = FashnCategoryModel()  # Base model instance
 
@@ -32,7 +32,7 @@ class FashnAIService(ExternalService):
             logging.error(f"Invalid category '{category}'. Must be one of {FashnCategory.list()}.")
             return None
 
-        endpoint = "predict"
+        endpoint = "/fashn/predict"
         data = {
             "model_image_base64": f"data:image/jpeg;base64,{model_image_path}",
             "garment_image_base64": f"data:image/jpeg;base64,{garment_image_path}",
@@ -56,17 +56,17 @@ class FashnAIService(ExternalService):
             return None
 
     def recommendation(self, image_data):
-        endpoint = "recommendations"
+        endpoint = "/recommendations"
         payload = ClothItem(
-            id=image_data["id"],
+            id=int(image_data["id"]),
             name=image_data["name"],
             color=image_data.get("colorOptions", [{}])[0].get("color", ""),
-            size=image_data.get("sizeOptions", [""])[0]
+            size=image_data.get("colorOptions", [{}])[0].get("sizeOptions", [""])[0].get("size", ""),
         )
 
         response = self.post(endpoint=endpoint, data=payload.model_dump())
-        if response.status_code == 200:
-            return response.json()
+        if response and response["status"] == "success":
+            return response
         else:
             logging.error(f"Recommendation failed: {response}")
             raise Exception(f"Failed to get recommendations: {response.status_code} - {response.text}")
