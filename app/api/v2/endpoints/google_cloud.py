@@ -157,7 +157,7 @@ async def get_recommendation(image_path: str):
         item = {}
         for clothing_item in clothing_data:
             for color_option in clothing_item.get("colorOptions", []):
-                if f"{settings.GCS_PUBLIC_BUCKET_URL}{color_option["image"]}" == image_path:
+                if settings.GCS_PUBLIC_BUCKET_URL+color_option["image"] == image_path:
                     item = clothing_item
                     break
             if item:
@@ -176,7 +176,7 @@ async def get_recommendation(image_path: str):
 
             for item in recommendation["recommendations"]:
                 product_key = (item["id"], item["category"],item["image"])
-                item["image"] = f"{settings.GCS_PUBLIC_BUCKET_URL}{item["image"]}"
+                item["image"] = settings.GCS_PUBLIC_BUCKET_URL+color_option["image"]
                 if product_key not in product_map:
                     product = {
                         "id": item["id"],
