@@ -1,5 +1,5 @@
-from pydantic import BaseModel, field_validator
-from typing import Annotated, Optional, Literal
+from pydantic import BaseModel, field_validator, ConfigDict
+from typing import Annotated, Optional, Literal, List
 
 
 class NewCharacter(BaseModel):
@@ -34,3 +34,24 @@ class TryOnRequest(BaseModel):
     ] = "auto"  # Allowed values: 'auto', 'flat-lay', 'model'
     long_top: Optional[bool] = False
 
+
+class Question(BaseModel):
+    id: int
+    question: str
+    choices: List[str]
+
+
+class UserAnswerResponse(BaseModel):
+    message: str
+    id: str
+    user_id: str
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "message": "Answers stored successfully",
+                "id": "65fa1234567e89abc0123456",
+                "user_id": "550e8400-e29b-41d4-a716-446655440000"
+            }
+        }
+    )
