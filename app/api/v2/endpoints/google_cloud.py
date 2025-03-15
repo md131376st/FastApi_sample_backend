@@ -176,7 +176,8 @@ async def get_recommendation(image_path: str):
 
             for item in recommendation["recommendations"]:
                 product_key = (item["id"], item["category"],item["image"])
-                item["image"] = settings.GCS_PUBLIC_BUCKET_URL+color_option["image"]
+                print(item["image"])
+                item["image"] = settings.GCS_PUBLIC_BUCKET_URL+item["image"]
                 if product_key not in product_map:
                     product = {
                         "id": item["id"],
