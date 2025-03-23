@@ -2,6 +2,7 @@ import base64
 import copy
 import hashlib
 import json
+from collections import defaultdict
 from typing import Optional, Annotated, Literal, List, Dict
 
 from fastapi import APIRouter, HTTPException, Query, Path, Depends
@@ -171,13 +172,13 @@ async def get_recommendation(image_path: str):
         if recommendation is None:
             return HTTPException(status_code=500, detail="Error generating recommendations ")
         if recommendation["status"] == "success":
-            products = []
+            category_dict = defaultdict(list)
             product_map = {}
 
             for item in recommendation["recommendations"]:
-                product_key = (item["id"], item["category"],item["image"])
-                print(item["image"])
-                item["image"] = settings.GCS_PUBLIC_BUCKET_URL+item["image"]
+                product_key = (item["id"], item["category"], item["image"])
+                item["image"] = settings.GCS_PUBLIC_BUCKET_URL + item["image"]
+
                 if product_key not in product_map:
                     product = {
                         "id": item["id"],
@@ -194,16 +195,19 @@ async def get_recommendation(image_path: str):
                         "allColors": []
                     }
                     product_map[product_key] = product
-                    products.append(product)
+                    category_dict[item["category"]].append(product)
 
                 # Add sizes
                 product_map[product_key]["selectedColor"]["sizeOptions"].append({"size": item["size"]})
 
                 # Ensure unique colors
                 if not any(c["color"] == item["color"] for c in product_map[product_key]["allColors"]):
-                    product_map[product_key]["allColors"].append({"color": item["color"], "image": item["image"]})
+                    product_map[product_key]["allColors"].append({
+                        "color": item["color"],
+                        "image": item["image"]
+                    })
 
-            return products
+            return dict(category_dict)
         else:
             return HTTPException(status_code=500, detail="Error generating recommendations ")
     except:
