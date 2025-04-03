@@ -81,7 +81,7 @@ def generate_image_logic(cloth_path, main_character, cloth) -> dict[str, Any] | 
     result = ai_service.predict(main_character, cloth, category=category)
 
     if result:
-        print("Predicted Image (Base64):", result["result_image_base64"])
+        # print("Predicted Image (Base64):", result["result_image_base64"])
         print("Execution Time:", result["execution_time"])
         return result
     else:

@@ -11,9 +11,12 @@ from app.core.config import settings
 from app.schemas.google_cloud import Project, ImageBase64Response
 from app.schemas.tryOn import TryOnRequest
 from app.services.fashn_ai_service import generate_image_logic, FashnAIService
-from app.services.gcs_service import get_file_from_gcs, list_images_in_bucket, check_file_exists_in_gcs, \
-    store_file_in_gcs
+from app.services.gcs_service import get_file_from_gcs
+import logging
+from app.services import gcs_async
 
+logger = logging.getLogger("character_logger")
+FALLBACK_IMAGE_PATH = f"{settings.GCS_PUBLIC_BUCKET_URL}/character/2_w.jpeg"
 router = APIRouter()
 
 
@@ -149,183 +152,192 @@ async def get_image(image_path: str):
 
 @router.get("/recommendation/{image_path:path}")
 async def get_recommendation(image_path: str):
-    print("hi")
     try:
         category = image_path.split('/')[-2]
         json_path = f"images/recommendation/{category}.json"
-        json_content = get_file_from_gcs(bucket_name=settings.GCS_BUCKET_NAME, file_path=json_path, as_text=True)
-        clothing_data = json.loads(json_content).get("clothingData", [])
-        item = {}
-        for clothing_item in clothing_data:
-            for color_option in clothing_item.get("colorOptions", []):
-                if settings.GCS_PUBLIC_BUCKET_URL+color_option["image"] == image_path:
-                    item = clothing_item
-                    break
-            if item:
-                break
-        print(item)
-        if not item:
-            return HTTPException(status_code=404, detail="Item not found in the JSON file.")
 
+        # Use async GCS access if available
+        json_content = await gcs_async.async_get_file_from_gcs(
+            bucket_name=settings.GCS_BUCKET_NAME,
+            file_path=json_path,
+            as_text=True
+        )
+
+        # Parse JSON once
+        clothing_data = json.loads(json_content).get("clothingData", [])
+
+        # Fast lookup using a generator expression
+        item = next(
+            (
+                clothing_item
+                for clothing_item in clothing_data
+                for color_option in clothing_item.get("colorOptions", [])
+                if f"{settings.GCS_PUBLIC_BUCKET_URL}{color_option['image']}" == image_path
+            ),
+            None
+        )
+
+        if not item:
+            raise HTTPException(status_code=404, detail="Item not found in the JSON file.")
+
+        # Call recommendation logic
         fastion_service = FashnAIService()
         recommendation = fastion_service.recommendation(item)
-        if recommendation is None:
-            return HTTPException(status_code=500, detail="Error generating recommendations ")
-        if recommendation["status"] == "success":
-            category_dict = defaultdict(list)
-            product_map = {}
 
-            for item in recommendation["recommendations"]:
-                product_key = (item["id"], item["category"], item["image"])
-                item["image"] = settings.GCS_PUBLIC_BUCKET_URL + item["image"]
+        if not recommendation or recommendation.get("status") != "success":
+            raise HTTPException(status_code=500, detail="Error generating recommendations")
 
-                if product_key not in product_map:
-                    product = {
-                        "id": item["id"],
-                        "name": item["name"],
-                        "model": item["model"],
-                        "price": str(item["price"]),
-                        "category": item["category"],
-                        "selectedColor": {
-                            "color": item["color"],
-                            "image": item["image"],
-                            "sizeOptions": []
-                        },
-                        "description": f"{item['name']} in {item['color']}, model {item['model']}",
-                        "allColors": []
-                    }
-                    product_map[product_key] = product
-                    category_dict[item["category"]].append(product)
+        category_dict = defaultdict(list)
+        product_map = {}
 
-                # Add sizes
-                product_map[product_key]["selectedColor"]["sizeOptions"].append({"size": item["size"]})
+        for rec in recommendation["recommendations"]:
+            rec["image"] = f"{settings.GCS_PUBLIC_BUCKET_URL}{rec['image']}"
+            product_key = (rec["id"], rec["category"], rec["image"])
 
-                # Ensure unique colors
-                if not any(c["color"] == item["color"] for c in product_map[product_key]["allColors"]):
-                    product_map[product_key]["allColors"].append({
-                        "color": item["color"],
-                        "image": item["image"]
-                    })
+            if product_key not in product_map:
+                product_map[product_key] = {
+                    "id": rec["id"],
+                    "name": rec["name"],
+                    "model": rec["model"],
+                    "price": str(rec["price"]),
+                    "category": rec["category"],
+                    "selectedColor": {
+                        "color": rec["color"],
+                        "image": rec["image"],
+                        "sizeOptions": []
+                    },
+                    "description": f"{rec['name']} in {rec['color']}, model {rec['model']}",
+                    "allColors": []
+                }
+                category_dict[rec["category"]].append(product_map[product_key])
 
-            return dict(category_dict)
-        else:
-            return HTTPException(status_code=500, detail="Error generating recommendations ")
-    except:
-        return HTTPException(status_code=500, detail=f"Error accessing the bucket")
+            # Add sizes
+            product_map[product_key]["selectedColor"]["sizeOptions"].append({"size": rec["size"]})
+
+            # Add colors only if not already added
+            if not any(c["color"] == rec["color"] for c in product_map[product_key]["allColors"]):
+                product_map[product_key]["allColors"].append({
+                    "color": rec["color"],
+                    "image": rec["image"]
+                })
+
+        return dict(category_dict)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating recommendations: {str(e)}")
+
 
 
 @router.get("/character_with_cloth/{main_character:path}", response_model=str)
 async def get_character_image(
-        main_character: str = Path(..., description="BucketPath"),
-        gender: str = Query(..., regex="^(man|woman)$"),
-        cloth_path: str = Query(..., description="Path to the clothing resource"),
-        # `None` allows the parameter to be optional
+        main_character: str = Path(..., description="Character image path (e.g. '2_f.jpg')"),
+        gender: str = Query(..., pattern="^(man|woman)$"),
+        cloth_path: str = Query(..., description="Path to the clothing image"),
         try_on_request: TryOnRequest = Depends()
 ):
-    """
-       generate the character with cloth
-       included in main_character path: images/character/
-       main_character defult = 2_f.jpg
-       no need for bucket
-       clothpath = images/recommendation/bottoms/00f9272f652fde49cae740deab4efec4.jpg
-       """
-    # Determine the correct gender identifier
-    gender_identifier = "m" if gender == "man" else "w"
+    logger.info(f"Incoming request | Character: {main_character}, Gender: {gender}, Cloth: {cloth_path}")
 
-    # Supported image extensions
     supported_extensions = [".png", ".jpg", ".jpeg", ".gif", ".bmp"]
 
-    # Check if the main_character has a valid image extension
-    for ext in supported_extensions:
-        if main_character.endswith(ext):
-            base_character = main_character[: -len(ext)]  # Strip the extension
-            break
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported file extension in main_character. Supported extensions are: {', '.join(supported_extensions)}"
-        )
-    exstantion = ""
-    for ext in supported_extensions:
-        if cloth_path.endswith(ext):
-            base_cloth = main_character[: -len(ext)]  # Strip the extension
-            exstantion = ext
-            break
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported file extension in main_character. Supported extensions are: {', '.join(supported_extensions)}"
-        )
+    def strip_extension(filename: str) -> str:
+        for ext in supported_extensions:
+            if filename.lower().endswith(ext):
+                return filename[: -len(ext)]
+        return filename
 
-    # Create a unique hash for the file name based on main_character and cloth_path
-    hash_input = f"{base_character}_{base_cloth}" if cloth_path else base_character
-    hash_value = hashlib.md5(hash_input.encode()).hexdigest()
+    def normalize_gcs_path(path: str) -> str:
+        return strip_extension(path.strip().lower().replace("/", "-").replace(" ", "_"))
 
-    # Construct the file path for GCS
+    gender_identifier = "m" if gender == "man" else "w"
 
-    gcs_file_path = f"character/{hash_value}_{gender_identifier}.jpeg"
+    # Normalize base character name
+    normalized_character = normalize_gcs_path(main_character)
+    if normalized_character.endswith(f"_{gender_identifier}"):
+        normalized_character = normalized_character[: -len(f"_{gender_identifier}")]
 
-    # Check if an image exists with the specified prefix
-    def find_image_with_prefix(prefix: str) -> Optional[str]:
-        # Replace with actual implementation for checking GCS or file storage
-        matched_file = check_file_exists_in_gcs(bucket_name=settings.GCS_BUCKET_NAME, prefix=prefix)
-        return matched_file
+    # Split into parts
+    parts = normalized_character.split("_")
+    base_character = parts[0]
+    previous_cloths = parts[1:] if len(parts) > 1 else []
 
-    image_path = find_image_with_prefix(gcs_file_path)
+    # Normalize cloth
+    base_cloth = normalize_gcs_path(cloth_path)
 
-    if not image_path:
-        # Call a function to generate the image if no image with the prefix exists
-        generated_image_path = generate_image_and_store(
-            bucket_name=settings.GCS_BUCKET_NAME,
-            main_character=f"character/{main_character}",
-            cloth_path=cloth_path,
-            file_path=gcs_file_path
-        )
-        if generated_image_path:
-            return generated_image_path
-        else:
-            raise HTTPException(status_code=500, detail="Internal server error")
+    # Extract cloth category (e.g., tops, bottoms, etc.)
+    category_keywords = ["tops", "bottoms", "overwears", "fullbodys"]
+    cloth_category = next((kw for kw in category_keywords if kw in cloth_path.lower()), "unknown")
 
-    if cloth_path and not check_file_exists_in_gcs(bucket_name=settings.GCS_BUCKET_NAME, file_path=cloth_path):
-        raise HTTPException(status_code=404, detail="Image doesn't exist")
-    print("hi")
-    return f"{settings.GCS_PUBLIC_BUCKET_URL}/{gcs_file_path}"
+    # Validate extensions
+    if strip_extension(main_character) == main_character:
+        raise HTTPException(status_code=400, detail="Unsupported file extension for main_character.")
+    if strip_extension(cloth_path) == cloth_path:
+        raise HTTPException(status_code=400, detail="Unsupported file extension for cloth_path.")
 
-
-def generate_image_and_store(
-        bucket_name: str,
-        main_character: str,
-        cloth_path: str,
-        file_path: str
-) -> str:
-    # Simulate image generation logic and store it in the bucket
-    # getbase64Images
-    # main_character => form the charector path of the bucket
-    # cloth_path => from
-
-    main_character_img = get_file_from_gcs(bucket_name=bucket_name, file_path=main_character, as_text=False)
-
-    # Encode the binary content into base64
-    main_character_img_base64 = base64.b64encode(main_character_img).decode('utf-8')
-    cloth_path_img = get_file_from_gcs(bucket_name=bucket_name, file_path=cloth_path, as_text=False)
-
-    # Encode the binary content into base64
-    cloth_path_img_base64 = base64.b64encode(cloth_path_img).decode('utf-8')
-    generated_image_content = generate_image_logic(
-        cloth_path,
-        main_character_img_base64,
-        cloth_path_img_base64
+    cloth_exists = await gcs_async.async_check_file_exists_in_gcs(
+        settings.GCS_BUCKET_NAME, file_path=cloth_path
     )
-    if generated_image_content:
-        base64_data = generated_image_content["result_image_base64"].split(",")[1]
+    if not cloth_exists:
+        raise HTTPException(status_code=404, detail="Clothing image doesn't exist.")
 
-        image_data = base64.b64decode(base64_data)
+    # Parse cloths by category
+    cloths_by_category = { }
+    for part in previous_cloths:
+        for cat in category_keywords:
+            if cat in part:
+                cloths_by_category[cat] = part
+                break
 
-        if generated_image_content:
-            store_file_in_gcs(
-                bucket_name,
-                file_path,
-                image_data
+    # Override or add new cloth
+    cloths_by_category[cloth_category] = base_cloth
+
+    # Sort by category for consistency
+    sorted_cloths = [cloths_by_category[cat] for cat in category_keywords if cat in cloths_by_category]
+
+    readable_filename = "_".join([base_character] + sorted_cloths + [gender_identifier]) + ".jpeg"
+    gcs_file_path = f"character/{readable_filename}"
+
+    logger.info(f"[CACHING] Computed readable path: {gcs_file_path}")
+
+    image_exists = await gcs_async.async_check_file_exists_in_gcs(
+        settings.GCS_BUCKET_NAME, file_path=gcs_file_path
+    )
+    if image_exists:
+        logger.info(f"[CACHING] Cached image found for: {gcs_file_path}")
+        return f"{settings.GCS_PUBLIC_BUCKET_URL}/{gcs_file_path}"
+
+    try:
+        main_character_img = await gcs_async.async_get_file_from_gcs(
+            settings.GCS_BUCKET_NAME, f"character/{main_character}", as_text=False
+        )
+        cloth_path_img = await gcs_async.async_get_file_from_gcs(
+            settings.GCS_BUCKET_NAME, cloth_path, as_text=False
+        )
+
+        main_character_img_base64 = base64.b64encode(main_character_img).decode("utf-8")
+        cloth_path_img_base64 = base64.b64encode(cloth_path_img).decode("utf-8")
+
+        generated_image_content = generate_image_logic(
+            cloth_path,
+            main_character_img_base64,
+            cloth_path_img_base64
+        )
+
+        if generated_image_content and "result_image_base64" in generated_image_content:
+            base64_data = generated_image_content["result_image_base64"].split(",")[-1]
+            image_data = base64.b64decode(base64_data)
+
+            await gcs_async.async_store_file_in_gcs(
+                settings.GCS_BUCKET_NAME, gcs_file_path, image_data
             )
-        return f"{settings.GCS_PUBLIC_BUCKET_URL}/{file_path}"
-    return ""
+
+            logger.info(f"[CACHING] Image generated and stored at: {gcs_file_path}")
+            return f"{settings.GCS_PUBLIC_BUCKET_URL}/{gcs_file_path}"
+        else:
+            logger.warning("[GENERATION] Image generation failed. Using fallback.")
+            return FALLBACK_IMAGE_PATH
+
+    except Exception as e:
+        logger.exception("[ERROR] Exception during image generation or GCS operations.")
+        return FALLBACK_IMAGE_PATH
+
+
