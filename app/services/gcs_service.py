@@ -1,116 +1,109 @@
 import os
-from typing import List, Dict, Optional
-
+from typing import List, Optional
+import logging
 from google.cloud import storage
-from app.core.config import settings  # Import the settings from your config
+from app.core.config import settings
 from app.core.enums import FashnCategory
 from app.schemas.fashn_category_model import FashnCategoryModel
 
+logger = logging.getLogger(__name__)
 
-# Initialize the Google Cloud Storage client
-def get_gcs_client():
+# Create a singleton GCS client to reuse
+_gcs_client: Optional[storage.Client] = None
+
+def get_gcs_client() -> storage.Client:
     """
     Initialize and return a Google Cloud Storage client using the credentials
-    set in the configuration file (Settings).
+    set in the configuration file.
     """
-    # Ensure the GOOGLE_APPLICATION_CREDENTIALS environment variable is set
-    if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
-        raise EnvironmentError("GOOGLE_APPLICATION_CREDENTIALS not set in the environment.")
+    global _gcs_client
+    if _gcs_client is None:
+        if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+            raise EnvironmentError("GOOGLE_APPLICATION_CREDENTIALS not set in the environment.")
+        _gcs_client = storage.Client()
+    return _gcs_client
 
-    # Create and return the storage client
-    return storage.Client()
 
-
-def get_file_from_gcs(bucket_name: str, file_path: str, as_text=True):
+def get_file_from_gcs(bucket_name: str, file_path: str, as_text: bool = True):
     """
-    Fetches a file from Google Cloud Storage bucket.
-
-    :param bucket_name: Name of the GCS bucket.
-    :param file_path: Path of the file within the bucket.
-    :param as_text: Whether to return the content as text (True) or binary (False).
-    :return: Contents of the file as a string or binary depending on `as_text`.
+    Fetch a file from GCS and return its contents as text or bytes.
     """
     try:
-        # Check if the file exists using the helper function
-        if not check_file_exists_in_gcs(bucket_name, file_path):
-            raise FileNotFoundError(f"File {file_path} not found in bucket {bucket_name}")
-
-        # Initialize the GCS client
         client = get_gcs_client()
-
-        # Reference the GCS bucket
         bucket = client.bucket(bucket_name)
         blob = bucket.blob(file_path)
 
-        # Download the file content as text or binary
-        if as_text:
-            return blob.download_as_text()
-        else:
-            return blob.download_as_bytes()  # For binary files like images
+        if not blob.exists():
+            raise FileNotFoundError(f"File '{file_path}' not found in bucket '{bucket_name}'.")
+
+        return blob.download_as_text() if as_text else blob.download_as_bytes()
 
     except Exception as e:
-        raise RuntimeError(f"An error occurred while fetching the file from GCS: {str(e)}")
+        raise RuntimeError(f"Failed to fetch file from GCS: {e}")
 
 
 def list_images_in_bucket(
-        bucket_name: str,
-        prefix: str = "",
-        selected_categories: Optional[List[FashnCategory]] = None) \
-        -> FashnCategoryModel:
-    storage_client = get_gcs_client()
+    bucket_name: str,
+    prefix: str = "",
+    selected_categories: Optional[List[FashnCategory]] = None
+) -> FashnCategoryModel:
+    """
+    Lists image files in GCS bucket under specific category prefixes.
+    """
+    client = get_gcs_client()
     category_model = FashnCategoryModel()
+    categories_to_list = selected_categories or list(FashnCategory)
 
     try:
-        bucket = storage_client.bucket(bucket_name)
-        categories_to_list = selected_categories or list(FashnCategory)
+        bucket = client.bucket(bucket_name)
 
         for category in categories_to_list:
-            blobs = bucket.list_blobs(prefix=f"{prefix}/{category.value}")
+            full_prefix = f"{prefix}/{category.value}"
+            blobs = bucket.list_blobs(prefix=full_prefix)
             category_model.categories[category] = [
                 blob.name for blob in blobs
                 if blob.name.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp"))
             ]
+
     except Exception as e:
-        print(f"Error accessing the bucket: {str(e)}")
+        logger.error(f"Error listing images in bucket: {e}")
 
     return category_model
 
 
-def check_file_exists_in_gcs(bucket_name: str, file_path: Optional[str] = None, prefix: Optional[str] = None) -> \
-        Optional[str]:
+def check_file_exists_in_gcs(bucket_name: str, file_path: Optional[str] = None, prefix: Optional[str] = None) -> bool:
     """
-    Checks if a file exists in a Google Cloud Storage bucket. Can check for a specific file or files matching a prefix.
+    Checks if a file or files with a prefix exist in GCS.
 
-    :param bucket_name: Name of the GCS bucket.
-    :param file_path: Specific file path to check (optional).
-    :param prefix: Prefix to search for matching files (optional).
-    :return: The file name if it exists, or None if no match is found.
+    :return: True if exists, False otherwise.
     """
     try:
         client = get_gcs_client()
         bucket = client.bucket(bucket_name)
 
         if file_path:
-            # Check for a specific file
-            blob = bucket.blob(file_path)
-            return file_path if blob.exists() else None
-        elif prefix:
-            # Check for files matching the prefix
+            return bucket.get_blob(file_path) is not None
+
+        if prefix:
             blobs = list(bucket.list_blobs(prefix=prefix))
-            return blobs[0].name if blobs else None
-        else:
-            raise ValueError("Either 'file_path' or 'prefix' must be provided.")
+            return len(blobs) > 0
+
+        raise ValueError("Either 'file_path' or 'prefix' must be provided.")
 
     except Exception as e:
-        raise RuntimeError(f"An error occurred while checking the file in GCS: {str(e)}")
+        raise RuntimeError(f"Error checking file existence in GCS: {e}")
 
 
-def store_file_in_gcs(bucket_name: str, file_path: str, content: bytes, type: str = "image/jpeg"):
+def store_file_in_gcs(bucket_name: str, file_path: str, content: bytes, content_type: str = "image/jpeg"):
+    """
+    Uploads a file to a GCS bucket.
+    """
     try:
         client = get_gcs_client()
         bucket = client.bucket(bucket_name)
         blob = bucket.blob(file_path)
-        blob.upload_from_string(content, content_type=type)
-        print(f"File {file_path} successfully uploaded to bucket {bucket_name}.")
+        blob.upload_from_string(content, content_type=content_type)
+        logger.info(f"File uploaded to GCS: {file_path}")
+
     except Exception as e:
-        raise RuntimeError(f"Failed to upload file to GCS: {str(e)}")
+        raise RuntimeError(f"Failed to upload file to GCS: {e}")
