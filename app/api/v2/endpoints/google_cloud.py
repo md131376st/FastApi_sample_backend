@@ -100,10 +100,13 @@ async def get_image(image_path: str):
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 
+DEFAULT_SIZES = ["XS", "S", "M", "L", "XL"]
+
+DEFAULT_SIZES = ["XS", "S", "M", "L", "XL"]
+
 @router.get("/recommendation/{image_path:path}")
 async def get_recommendation(image_path: str):
     try:
-        # Extract category and locate JSON
         category = image_path.split('/')[-2]
         json_path = f"images/recommendation/{category}.json"
 
@@ -115,7 +118,6 @@ async def get_recommendation(image_path: str):
 
         clothing_data = json.loads(json_content).get("clothingData", [])
 
-        # Find the item that matches the image
         item = next(
             (
                 item for item in clothing_data
@@ -128,7 +130,6 @@ async def get_recommendation(image_path: str):
         if not item:
             raise HTTPException(status_code=404, detail="Item not found.")
 
-        # Get AI-powered recommendations
         fashn_service = FashnAIService()
         recommendation = fashn_service.recommendation(item)
 
@@ -137,21 +138,20 @@ async def get_recommendation(image_path: str):
 
         category_dict = defaultdict(list)
         product_map = {}
+        all_color_map = defaultdict(lambda: defaultdict(dict))  # product_key -> color -> {image, sizes}
 
         for rec in recommendation["recommendations"]:
-
-            # Normalize image path
             rec["image"] = f"{settings.GCS_PUBLIC_BUCKET_URL}{rec['image']}"
             key = (rec["id"], rec["category"])
 
-            # Add product if not already added
-            if key not in product_map:
-                # Get matching color info from item
-                matching_color = next(
-                    (c for c in item.get("colorOptions", []) if c["color"] == rec["color"]),
-                    {}
-                )
+            # Save color info for later building allColors
+            color = rec["color"]
+            all_color_map[key][color].setdefault("image", rec["image"])
+            all_color_map[key][color].setdefault("sizes", {})
+            all_color_map[key][color]["sizes"][rec["size"]] = True
 
+            # Init product if not already
+            if key not in product_map:
                 product_map[key] = {
                     "id": rec["id"],
                     "name": rec["name"],
@@ -163,31 +163,37 @@ async def get_recommendation(image_path: str):
                         "image": rec["image"],
                         "sizeOptions": []
                     },
-                    "description": f"{rec['name']} in {rec['color']}, model {rec['model']}",
-                    "allColors": []  # Will fill in below
+                    "description": "",
+                    "allColors": []  # filled later
                 }
-
-                # Push to category group
                 category_dict[rec["category"]].append(product_map[key])
 
-            # Append the recommended size to selectedColor
-            product_map[key]["selectedColor"]["sizeOptions"].append({"size": rec["size"]})
+            # Add size to selectedColor
+            if rec["color"] == product_map[key]["selectedColor"]["color"]:
+                product_map[key]["selectedColor"]["sizeOptions"].append({
+                    "size": rec["size"],
+                    "available": True
+                })
 
-        # Fill in all colorOptions for each product from the original item
+        # Now build allColors from recommendations
         for key, product in product_map.items():
-            if not product["allColors"]:
-                for color_option in item.get("colorOptions", []):
-                    product["allColors"].append({
-                        "color": color_option["color"],
-                        "image": f"{color_option['image']}",
-                        "sizeOptions": color_option.get("sizeOptions", [])
+            for color, data in all_color_map[key].items():
+                color_entry = {
+                    "color": color,
+                    "image": data["image"],
+                    "sizeOptions": []
+                }
+                for size in DEFAULT_SIZES:
+                    color_entry["sizeOptions"].append({
+                        "size": size,
+                        "available": data["sizes"].get(size, False)
                     })
+                product["allColors"].append(color_entry)
 
         return dict(category_dict)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating recommendations: {str(e)}")
-
 
 
 @router.get("/character_with_cloth/{main_character:path}", response_model=str)
