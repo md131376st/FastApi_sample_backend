@@ -16,7 +16,7 @@ import logging
 import time
 
 logger = logging.getLogger("character_logger")
-FALLBACK_IMAGE_PATH = f"{settings.GCS_PUBLIC_BUCKET_URL}/character/2_w.jpeg"
+
 router = APIRouter()
 
 from fastapi import Query, Path
@@ -250,6 +250,11 @@ async def get_character_image(
     def normalize_path(path: str) -> str:
         return strip_ext(path.strip().lower().replace("/", "-").replace(" ", "_"))
 
+    # 👇 Gender-specific fallback image logic
+    FALLBACK_IMAGE_MAN = f"{settings.GCS_PUBLIC_BUCKET_URL}/character/2_m.jpeg"
+    FALLBACK_IMAGE_WOMAN = f"{settings.GCS_PUBLIC_BUCKET_URL}/character/2_w.jpeg"
+    fallback_image = FALLBACK_IMAGE_MAN if gender == "man" else FALLBACK_IMAGE_WOMAN
+
     gender_suffix = "m" if gender == "man" else "w"
     character_stripped = strip_ext(main_character)
     cloth_stripped = strip_ext(cloth_path)
@@ -293,8 +298,8 @@ async def get_character_image(
             await gcs_async.async_store_file_in_gcs(settings.GCS_BUCKET_NAME, gcs_file_path, image_data)
             return f"{settings.GCS_PUBLIC_BUCKET_URL}/{gcs_file_path}"
 
-        return FALLBACK_IMAGE_PATH
+        return fallback_image  # 👈 Return gender-based fallback
 
     except Exception as e:
         logger.exception("Error generating or storing image.")
-        return FALLBACK_IMAGE_PATH
+        return fallback_image  # 👈 Return gender-based fallback
