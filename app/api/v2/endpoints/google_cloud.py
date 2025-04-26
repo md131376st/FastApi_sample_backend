@@ -19,19 +19,40 @@ logger = logging.getLogger("character_logger")
 FALLBACK_IMAGE_PATH = f"{settings.GCS_PUBLIC_BUCKET_URL}/character/2_w.jpeg"
 router = APIRouter()
 
+from fastapi import Query, Path
+from typing import Annotated
 
-@router.get("/get-cloth/{category}", response_model=List[Dict])
-async def get_cloth(category: Annotated[str, Literal["tops", "bottoms", "overwears", "fullbodys"]]):
+
+@router.get("/get-cloth/{category}", response_model=List[Dict], tags=["Clothing APIs"])
+async def get_cloth(
+        category: Annotated[
+            str,
+            Path(
+                description="Category of clothing",
+                examples=["tops", "bottoms", "overwears", "fullbodys"]
+            )
+        ],
+        gender: Annotated[
+            str,
+            Query(
+                description="Gender must be 'male' or 'female'",
+                enum=["male", "female"]
+            )
+        ]
+):
     try:
-        json_path = f"images/recommendation/{category}.json"
+        gender = gender.lower()
+        category = category.lower()
+        json_path = f"images/recommendation/{gender}/{category}.json"
         json_content = await gcs_async.async_get_file_from_gcs(settings.GCS_BUCKET_NAME, json_path, as_text=True)
         clothing_data = json.loads(json_content).get("clothingData", [])
 
         return [
             {
-                "id": f"{category}:{item['id']}:{i}",
+                "id": f"{gender}:{category}:{item['id']}:{i}",
                 "type": item["category"].lower(),
                 "name": item["name"],
+                "gender": gender,
                 "image": f"{settings.GCS_PUBLIC_BUCKET_URL}{color['image']}",
                 "price": float(item["price"].replace("$", ""))
             }
@@ -49,10 +70,11 @@ async def get_cloth(category: Annotated[str, Literal["tops", "bottoms", "overwea
 @router.get("/get-product/{product_id}", response_model=Dict)
 async def get_product(product_id: str):
     try:
-        category, product_number, color_index = product_id.split(":")
+        gender, category, product_number, color_index = product_id.split(":")
         product_number, color_index = int(product_number), int(color_index)
 
-        json_path = f"images/recommendation/{category}.json"
+        gender = gender.lower()
+        json_path = f"images/recommendation/{gender}/{category}.json"
         json_content = await gcs_async.async_get_file_from_gcs(settings.GCS_BUCKET_NAME, json_path, as_text=True)
         clothing_data = json.loads(json_content).get("clothingData", [])
 
@@ -66,11 +88,12 @@ async def get_product(product_id: str):
         selected_color["image"] = f"{settings.GCS_PUBLIC_BUCKET_URL}{selected_color['image']}"
 
         return {
-            "id": product["id"],
+            "id": product_id,  # full id including gender
             "name": product["name"],
             "model": product["model"],
             "price": product["price"],
             "category": product["category"],
+            "gender": gender,  # 👈 ADD gender here
             "selectedColor": selected_color,
             "description": product.get("description", ""),
             "allColors": [
@@ -104,11 +127,21 @@ DEFAULT_SIZES = ["XS", "S", "M", "L", "XL"]
 
 DEFAULT_SIZES = ["XS", "S", "M", "L", "XL"]
 
-@router.get("/recommendation/{image_path:path}")
+
+@router.get("/recommendation/{image_path:path}", tags=["Clothing APIs"])
 async def get_recommendation(image_path: str):
     try:
-        category = image_path.split('/')[-2]
-        json_path = f"images/recommendation/{category}.json"
+        # Extract gender automatically from the image path
+        if "/male/" in image_path:
+            gender = "male"
+        elif "/female/" in image_path:
+            gender = "female"
+        else:
+            raise HTTPException(status_code=400, detail="Cannot determine gender from image path.")
+
+        category = image_path.split('/')[-2]  # extract category like 'bottoms', 'tops', etc.
+
+        json_path = f"images/recommendation/{gender}/{category}.json"  # dynamic path based on gender
 
         json_content = await gcs_async.async_get_file_from_gcs(
             settings.GCS_BUCKET_NAME,
@@ -118,6 +151,7 @@ async def get_recommendation(image_path: str):
 
         clothing_data = json.loads(json_content).get("clothingData", [])
 
+        # Find the clicked item by matching image_path
         item = next(
             (
                 item for item in clothing_data
@@ -130,6 +164,7 @@ async def get_recommendation(image_path: str):
         if not item:
             raise HTTPException(status_code=404, detail="Item not found.")
 
+        # Call your recommendation engine
         fashn_service = FashnAIService()
         recommendation = fashn_service.recommendation(item)
 
@@ -144,7 +179,6 @@ async def get_recommendation(image_path: str):
             rec["image"] = f"{settings.GCS_PUBLIC_BUCKET_URL}{rec['image']}"
             key = (rec["id"], rec["category"])
 
-            # Save color info for later building allColors
             color = rec["color"]
             all_color_map[key][color].setdefault("image", rec["image"])
             all_color_map[key][color].setdefault("sizes", {})
@@ -158,6 +192,7 @@ async def get_recommendation(image_path: str):
                     "model": rec["model"],
                     "price": str(rec["price"]),
                     "category": rec["category"],
+                    "gender": gender,  # 👈 gender included in the product
                     "selectedColor": {
                         "color": rec["color"],
                         "image": rec["image"],
@@ -168,14 +203,12 @@ async def get_recommendation(image_path: str):
                 }
                 category_dict[rec["category"]].append(product_map[key])
 
-            # Add size to selectedColor
             if rec["color"] == product_map[key]["selectedColor"]["color"]:
                 product_map[key]["selectedColor"]["sizeOptions"].append({
                     "size": rec["size"],
                     "available": True
                 })
 
-        # Now build allColors from recommendations
         for key, product in product_map.items():
             for color, data in all_color_map[key].items():
                 color_entry = {
@@ -198,10 +231,10 @@ async def get_recommendation(image_path: str):
 
 @router.get("/character_with_cloth/{main_character:path}", response_model=str)
 async def get_character_image(
-    main_character: str = Path(...),
-    gender: str = Query(..., pattern="^(man|woman)$"),
-    cloth_path: str = Query(...),
-    try_on_request: TryOnRequest = Depends()
+        main_character: str = Path(...),
+        gender: str = Query(..., pattern="^(man|woman)$"),
+        cloth_path: str = Query(...),
+        try_on_request: TryOnRequest = Depends()
 ):
     start_time = time.time()
     logger.info(f"Request received | Character: {main_character}, Gender: {gender}, Cloth: {cloth_path}")
